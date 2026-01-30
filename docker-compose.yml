@@ -1,0 +1,130 @@
+version: '3.8'
+
+services:
+  # PostgreSQL for User Service
+  user-db:
+    image: postgres:16-alpine
+    container_name: user-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: userdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - user_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - microservices
+
+  # PostgreSQL for Order Service
+  order-db:
+    image: postgres:16-alpine
+    container_name: order-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: orderdb
+    ports:
+      - "5433:5432"
+    volumes:
+      - order_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - microservices
+
+  # User Service
+  user-service:
+    build:
+      context: .
+      dockerfile: services/user-service/Dockerfile
+    container_name: user-service
+    environment:
+      - USER_SERVICE_PORT=8081
+      - USER_SERVICE_DB_HOST=user-db
+      - USER_SERVICE_DB_PORT=5432
+      - USER_SERVICE_DB_USER=postgres
+      - USER_SERVICE_DB_PASSWORD=postgres
+      - USER_SERVICE_DB_NAME=userdb
+      - USER_SERVICE_LOG_LEVEL=info
+      - USER_SERVICE_RATE_LIMIT=100
+    ports:
+      - "8081:8081"
+    depends_on:
+      user-db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - microservices
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Order Service
+  order-service:
+    build:
+      context: .
+      dockerfile: services/order-service/Dockerfile
+    container_name: order-service
+    environment:
+      - ORDER_SERVICE_PORT=8082
+      - ORDER_SERVICE_DB_HOST=order-db
+      - ORDER_SERVICE_DB_PORT=5432
+      - ORDER_SERVICE_DB_USER=postgres
+      - ORDER_SERVICE_DB_PASSWORD=postgres
+      - ORDER_SERVICE_DB_NAME=orderdb
+      - ORDER_SERVICE_LOG_LEVEL=info
+      - ORDER_SERVICE_RATE_LIMIT=100
+      - ORDER_SERVICE_USER_SERVICE_URL=http://user-service:8081
+      - CIRCUIT_BREAKER_MAX_REQUESTS=3
+      - CIRCUIT_BREAKER_INTERVAL=60
+      - CIRCUIT_BREAKER_TIMEOUT=30
+    ports:
+      - "8082:8082"
+    depends_on:
+      order-db:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - microservices
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8082/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Prometheus (optional - for metrics collection)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    ports:
+      - "9090:9090"
+    networks:
+      - microservices
+
+volumes:
+  user_db_data:
+  order_db_data:
+  prometheus_data:
+
+networks:
+  microservices:
+    driver: bridge
