@@ -1,5 +1,7 @@
-# Binaries for programs and plugins
+# Go
+bin/
 *.exe
+
 *.exe~
 *.dll
 *.so
@@ -8,10 +10,19 @@ bin/
 tmp/
 
 # Test binary, built with `go test -c`
-*.test
 
-# Output of the go coverage tool
+
+*.test
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+tmp/
+
+# Test binary, built with `go test -c`
 *.out
+
 coverage.txt
 coverage.html
 
@@ -26,24 +37,22 @@ go.work
 .env.local
 .env.*.local
 
-# IDE files
+# OS / IDE
+.DS_Store
 .idea/
 .vscode/
 *.swp
 *.swo
 *~
-.DS_Store
 
-# Air (hot reload) temp files
-tmp/
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
 
-# Log files
+# Logs
 *.log
 logs/
 
-# Database files
-*.db
-*.sqlite
-
-# Docker volumes
-postgres_data/
+# Air (hot reload) temp files
+tmp/
