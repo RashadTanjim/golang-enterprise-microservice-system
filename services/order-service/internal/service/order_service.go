@@ -40,8 +40,8 @@ func (s *orderService) CreateOrder(ctx context.Context, req *model.CreateOrderRe
 	if err != nil {
 		// If circuit breaker is open or user service is down, still create order
 		// but return without user data (graceful degradation)
-		if errors, ok := err.(*errors.AppError); ok {
-			if errors.Code == errors.ErrCodeCircuitOpen || errors.Code == errors.ErrCodeServiceUnavail {
+		if appErr, ok := err.(*errors.AppError); ok {
+			if appErr.Code == errors.ErrCodeCircuitOpen || appErr.Code == errors.ErrCodeServiceUnavail {
 				// Create order without user validation
 				order := &model.Order{
 					UserID:     req.UserID,
