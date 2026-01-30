@@ -1,8 +1,9 @@
-package service
+package tests
 
 import (
 	"context"
 	"enterprise-microservice-system/services/repository-service/internal/model"
+	"enterprise-microservice-system/services/repository-service/internal/service"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -56,7 +57,7 @@ func (m *MockRepositoryRepository) List(ctx context.Context, query *model.ListRe
 
 func TestCreateRepository_Success(t *testing.T) {
 	mockRepo := new(MockRepositoryRepository)
-	service := NewRepositoryService(mockRepo)
+	service := service.NewRepositoryService(mockRepo)
 
 	req := &model.CreateRepositoryRequest{
 		Name:        "test-repo",
@@ -82,7 +83,7 @@ func TestCreateRepository_Success(t *testing.T) {
 
 func TestCreateRepository_DuplicateName(t *testing.T) {
 	mockRepo := new(MockRepositoryRepository)
-	service := NewRepositoryService(mockRepo)
+	service := service.NewRepositoryService(mockRepo)
 
 	req := &model.CreateRepositoryRequest{
 		Name:        "test-repo",
@@ -106,7 +107,7 @@ func TestCreateRepository_DuplicateName(t *testing.T) {
 
 func TestUpdateRepository_Success(t *testing.T) {
 	mockRepo := new(MockRepositoryRepository)
-	service := NewRepositoryService(mockRepo)
+	service := service.NewRepositoryService(mockRepo)
 
 	existingRepo := &model.Repository{
 		ID:          1,
@@ -133,7 +134,7 @@ func TestUpdateRepository_Success(t *testing.T) {
 
 func TestGetRepository_Success(t *testing.T) {
 	mockRepo := new(MockRepositoryRepository)
-	service := NewRepositoryService(mockRepo)
+	service := service.NewRepositoryService(mockRepo)
 
 	expectedRepo := &model.Repository{
 		ID:          1,
@@ -155,7 +156,7 @@ func TestGetRepository_Success(t *testing.T) {
 
 func TestGetRepository_NotFound(t *testing.T) {
 	mockRepo := new(MockRepositoryRepository)
-	service := NewRepositoryService(mockRepo)
+	service := service.NewRepositoryService(mockRepo)
 
 	mockRepo.On("FindByID", mock.Anything, uint(999)).Return(nil, gorm.ErrRecordNotFound)
 
