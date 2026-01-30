@@ -1,0 +1,275 @@
+enterprise-microservice-system/
+│
+├── 📄 README.md                              # Complete documentation
+├── 📄 EXAMPLES.md                            # API usage examples
+├── 📄 PROJECT_SUMMARY.md                     # Project overview
+├── 📄 go.mod                                 # Go module definition
+├── 📄 go.sum                                 # Dependency checksums
+├── 📄 Makefile                               # Build automation
+├── 📄 docker-compose.yml                     # Container orchestration
+├── 📄 .env                                   # Local environment config
+├── 📄 .env.example                           # Environment template
+├── 📄 .gitignore                             # Git ignore rules
+│
+├── 📁 common/                                # Shared libraries
+│   ├── 📁 circuitbreaker/
+│   │   └── circuitbreaker.go                # Circuit breaker implementation
+│   ├── 📁 errors/
+│   │   └── errors.go                        # Custom error types
+│   ├── 📁 logger/
+│   │   └── logger.go                        # Structured logging (Zap)
+│   ├── 📁 metrics/
+│   │   └── metrics.go                       # Prometheus metrics
+│   ├── 📁 middleware/
+│   │   ├── cors.go                          # CORS handling
+│   │   ├── logger.go                        # Request logging
+│   │   ├── rate_limiter.go                  # Token bucket rate limiter
+│   │   ├── rate_limiter_test.go            # Rate limiter tests
+│   │   ├── recovery.go                      # Panic recovery
+│   │   └── request_id.go                    # Request ID tracking
+│   └── 📁 response/
+│       └── response.go                      # Standard API responses
+│
+├── 📁 services/
+│   ├── 📁 user-service/                     # User Management Service (8081)
+│   │   ├── 📄 Dockerfile                    # Container definition
+│   │   ├── 📄 .air.toml                     # Hot reload config
+│   │   ├── 📁 cmd/
+│   │   │   └── main.go                      # Service entry point
+│   │   ├── 📁 internal/
+│   │   │   ├── 📁 api/
+│   │   │   │   └── router.go               # HTTP routes setup
+│   │   │   ├── 📁 config/
+│   │   │   │   └── config.go               # Configuration management
+│   │   │   ├── 📁 handler/
+│   │   │   │   └── user_handler.go         # HTTP request handlers
+│   │   │   ├── 📁 model/
+│   │   │   │   └── user.go                 # Domain models & DTOs
+│   │   │   ├── 📁 repository/
+│   │   │   │   └── user_repository.go      # Database operations
+│   │   │   └── 📁 service/
+│   │   │       └── user_service.go         # Business logic
+│   │   └── 📁 tests/
+│   │       └── user_service_test.go        # Unit tests
+│   │
+│   └── 📁 order-service/                    # Order Management Service (8082)
+│       ├── 📄 Dockerfile                    # Container definition
+│       ├── 📄 .air.toml                     # Hot reload config
+│       ├── 📁 cmd/
+│       │   └── main.go                      # Service entry point
+│       └── 📁 internal/
+│           ├── 📁 api/
+│           │   └── router.go               # HTTP routes setup
+│           ├── 📁 client/
+│           │   └── user_client.go          # User service client (w/ circuit breaker)
+│           ├── 📁 config/
+│           │   └── config.go               # Configuration management
+│           ├── 📁 handler/
+│           │   └── order_handler.go        # HTTP request handlers
+│           ├── 📁 model/
+│           │   └── order.go                # Domain models & DTOs
+│           ├── 📁 repository/
+│           │   └── order_repository.go     # Database operations
+│           └── 📁 service/
+│               └── order_service.go        # Business logic
+│
+├── 📁 monitoring/
+│   └── prometheus.yml                       # Prometheus configuration
+│
+└── 📁 bin/                                  # Built binaries (gitignored)
+    ├── user-service                         # User service binary
+    └── order-service                        # Order service binary
+
+SERVICES ARCHITECTURE:
+┌─────────────────────────────────────────────────────────────────┐
+│                        Client/Browser                           │
+└────────────────────────┬────────────────────────────────────────┘
+                         │
+            ┌────────────┴────────────┐
+            │                         │
+    ┌───────▼────────┐       ┌───────▼────────┐
+    │  User Service  │       │ Order Service  │
+    │   Port: 8081   │◄──────┤   Port: 8082   │
+    │                │       │                │
+    │ - CRUD Users   │       │ - CRUD Orders  │
+    │ - Validation   │       │ - User Lookup  │
+    │ - Pagination   │       │ - Circuit Break│
+    └───────┬────────┘       └───────┬────────┘
+            │                        │
+    ┌───────▼────────┐       ┌───────▼────────┐
+    │   PostgreSQL   │       │   PostgreSQL   │
+    │    (userdb)    │       │   (orderdb)    │
+    │   Port: 5432   │       │   Port: 5433   │
+    └────────────────┘       └────────────────┘
+
+MIDDLEWARE STACK (Applied to every request):
+┌────────────────────────────────────────┐
+│  1. CORS Middleware                    │ ← Allow cross-origin
+├────────────────────────────────────────┤
+│  2. Request ID Middleware              │ ← Generate UUID
+├────────────────────────────────────────┤
+│  3. Recovery Middleware                │ ← Panic handling
+├────────────────────────────────────────┤
+│  4. Logger Middleware                  │ ← Request logging
+├────────────────────────────────────────┤
+│  5. Metrics Middleware                 │ ← Prometheus tracking
+├────────────────────────────────────────┤
+│  6. Rate Limiter Middleware            │ ← Token bucket
+├────────────────────────────────────────┤
+│  7. Handler                            │ ← Business logic
+└────────────────────────────────────────┘
+
+CIRCUIT BREAKER STATES:
+┌─────────┐  Failure Rate >= 50%   ┌──────┐
+│ CLOSED  │───────────────────────►│ OPEN │
+└────┬────┘                        └───┬──┘
+     │         ▲                       │
+     │         │                       │ After Timeout (30s)
+     │         │ Success               │
+     │         │                       ▼
+     │    ┌────┴──────┐          ┌─────────┐
+     └────┤ HALF-OPEN │◄─────────┤         │
+          └───────────┘          └─────────┘
+             │
+             │ Max 3 requests
+             │ All succeed → CLOSED
+             │ Any fail → OPEN
+             ▼
+
+KEY PATTERNS IMPLEMENTED:
+✓ Clean Architecture (Transport → Service → Repository)
+✓ Repository Pattern (Data access abstraction)
+✓ Dependency Injection (Constructor-based)
+✓ Circuit Breaker (Resilience pattern)
+✓ Rate Limiting (Token bucket algorithm)
+✓ Request-Response Pattern (Synchronous HTTP)
+✓ Database per Service (Microservice pattern)
+✓ Graceful Shutdown (Signal handling)
+✓ Health Check Pattern (Monitoring)
+✓ Structured Logging (Observability)
+✓ Metrics Collection (Prometheus)
+✓ Error Handling (Custom errors with codes)
+✓ Pagination Pattern (Cursor/offset based)
+✓ Soft Delete (Data retention)
+✓ Connection Pooling (Resource management)
+
+TECHNOLOGY BREAKDOWN:
+┌────────────────┬─────────────────────────────────────┐
+│ Category       │ Technology                          │
+├────────────────┼─────────────────────────────────────┤
+│ Language       │ Go 1.23                            │
+│ HTTP Framework │ Gin (High performance)             │
+│ ORM            │ GORM (Type-safe queries)           │
+│ Database       │ PostgreSQL 16                      │
+│ Logging        │ Zap (Structured JSON)              │
+│ Metrics        │ Prometheus (Time-series DB)        │
+│ Circuit Breaker│ gobreaker (Sony)                   │
+│ Rate Limiting  │ golang.org/x/time/rate             │
+│ Config         │ godotenv (Environment)             │
+│ Testing        │ Go testing + testify               │
+│ Containerization│ Docker + Docker Compose           │
+│ Hot Reload     │ Air                                │
+└────────────────┴─────────────────────────────────────┘
+
+OBSERVABILITY ENDPOINTS:
+GET /health                → Service health status
+GET /metrics               → Prometheus metrics
+
+METRICS COLLECTED:
+- {service}_requests_total{method,path,status}
+- {service}_request_duration_seconds{method,path}
+- {service}_errors_total{type}
+- {service}_circuit_breaker_state{service}
+
+ENVIRONMENT VARIABLES (39 total):
+User Service (9):
+- USER_SERVICE_PORT
+- USER_SERVICE_DB_HOST
+- USER_SERVICE_DB_PORT
+- USER_SERVICE_DB_USER
+- USER_SERVICE_DB_PASSWORD
+- USER_SERVICE_DB_NAME
+- USER_SERVICE_LOG_LEVEL
+- USER_SERVICE_RATE_LIMIT
+
+Order Service (10):
+- ORDER_SERVICE_PORT
+- ORDER_SERVICE_DB_HOST
+- ORDER_SERVICE_DB_PORT
+- ORDER_SERVICE_DB_USER
+- ORDER_SERVICE_DB_PASSWORD
+- ORDER_SERVICE_DB_NAME
+- ORDER_SERVICE_LOG_LEVEL
+- ORDER_SERVICE_RATE_LIMIT
+- ORDER_SERVICE_USER_SERVICE_URL
+
+Circuit Breaker (3):
+- CIRCUIT_BREAKER_MAX_REQUESTS
+- CIRCUIT_BREAKER_INTERVAL
+- CIRCUIT_BREAKER_TIMEOUT
+
+MAKEFILE COMMANDS:
+make help          → Show all commands
+make build         → Build all services
+make run           → Run all services
+make run-user      → Run user service
+make run-order     → Run order service
+make test          → Run all tests
+make test-user     → Run user service tests
+make test-order    → Run order service tests
+make lint          → Run linter
+make docker-up     → Start Docker containers
+make docker-down   → Stop Docker containers
+make docker-clean  → Remove all Docker resources
+make clean         → Clean build artifacts
+make deps          → Download dependencies
+make dev-user      → Hot reload user service
+make dev-order     → Hot reload order service
+make format        → Format code
+make vet           → Run go vet
+
+DOCKER CONTAINERS:
+- user-service    (Go application)
+- order-service   (Go application)
+- user-db         (PostgreSQL 16)
+- order-db        (PostgreSQL 16)
+- prometheus      (Metrics collection)
+
+PORTS:
+8081 → User Service HTTP API
+8082 → Order Service HTTP API
+5432 → User Database (PostgreSQL)
+5433 → Order Database (PostgreSQL)
+9090 → Prometheus Dashboard
+
+API VERSIONING:
+All APIs are versioned: /api/v1/*
+
+RESPONSE FORMAT:
+Success:
+{
+  "success": true,
+  "data": {...},
+  "meta": {
+    "page": 1,
+    "page_size": 10,
+    "total_pages": 5,
+    "total_count": 50
+  }
+}
+
+Error:
+{
+  "success": false,
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human readable message"
+  }
+}
+
+This structure follows Go best practices:
+- cmd/ for main applications
+- internal/ for private application code
+- pkg/ would be used for public libraries
+- Flat structure within services
+- Clear separation of concerns
