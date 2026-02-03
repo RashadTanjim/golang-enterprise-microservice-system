@@ -147,9 +147,7 @@ func main() {
 	}
 
 	// Close database connection
-	if sqlDB != nil {
-		sqlDB.Close()
-	}
+	sqlDB.Close()
 
 	log.Info("Server exited")
 }
