@@ -57,6 +57,10 @@ This system is a production-ready microservice architecture built with Go. It co
 
 Each service owns its database (database-per-service).
 
+### 4.6 Diagram Source
+- Mermaid source: `docs/hld-diagram.mmd`
+- Rendered SVG: `docs/hld-diagram.svg`
+
 ## 5) Data Flow
 
 ### 5.1 Auth & Authorization

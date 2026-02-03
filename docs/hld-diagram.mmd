@@ -1,0 +1,39 @@
+flowchart LR
+  subgraph Portal[Vue Portal + Nginx Gateway]
+    PortalUI[Vue SPA\nPort 8080]
+  end
+
+  subgraph Services[Go Microservices]
+    UserSvc[User Service\nPort 8081]
+    OrderSvc[Order Service\nPort 8082]
+    RepoSvc[Repository Service\nPort 8083]
+  end
+
+  subgraph Datastores[Datastores]
+    UserDB[(User DB\nPostgreSQL)]
+    OrderDB[(Order DB\nPostgreSQL)]
+    RepoDB[(Repository DB\nPostgreSQL)]
+    Redis[(Redis Cache\nPort 6379)]
+  end
+
+  subgraph Observability[Observability]
+    Prometheus[Prometheus\nMetrics]
+  end
+
+  PortalUI --> UserSvc
+  PortalUI --> OrderSvc
+  PortalUI --> RepoSvc
+
+  UserSvc --> UserDB
+  OrderSvc --> OrderDB
+  RepoSvc --> RepoDB
+
+  UserSvc <--> Redis
+  OrderSvc <--> Redis
+  RepoSvc <--> Redis
+
+  UserSvc --> Prometheus
+  OrderSvc --> Prometheus
+  RepoSvc --> Prometheus
+
+  OrderSvc -. service call .-> UserSvc
