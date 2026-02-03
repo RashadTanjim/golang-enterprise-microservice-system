@@ -603,6 +603,9 @@ make lint
 
 ### High-Level Design
 - See `docs/HLD.md` for the system architecture and data flow details.
+
+### Go Dependencies
+- See `docs/GO_DEPENDENCIES.md` for a full explanation of every Go module in `go.mod`.
 ### Swagger
 - Swagger UI is served at `/swagger/index.html` for each service.
 - Regenerate docs with `make swagger` after updating handler annotations.
