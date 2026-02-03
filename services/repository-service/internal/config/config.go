@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -13,6 +14,7 @@ type Config struct {
 	Server   ServerConfig
 	Database DatabaseConfig
 	Log      LogConfig
+	Auth     AuthConfig
 }
 
 // ServerConfig holds server configuration
@@ -35,6 +37,14 @@ type LogConfig struct {
 	Level string
 }
 
+// AuthConfig holds authentication configuration
+type AuthConfig struct {
+	Secret   string
+	Issuer   string
+	Audience string
+	TokenTTL time.Duration
+}
+
 // Load loads configuration from environment variables
 func Load() (*Config, error) {
 	// Try to load .env file (optional in production)
@@ -43,6 +53,11 @@ func Load() (*Config, error) {
 	rateLimit, err := strconv.Atoi(getEnv("REPOSITORY_SERVICE_RATE_LIMIT", "100"))
 	if err != nil {
 		rateLimit = 100
+	}
+
+	tokenTTLMinutes, err := strconv.Atoi(getEnv("AUTH_TOKEN_TTL_MINUTES", "60"))
+	if err != nil {
+		tokenTTLMinutes = 60
 	}
 
 	config := &Config{
@@ -59,6 +74,12 @@ func Load() (*Config, error) {
 		},
 		Log: LogConfig{
 			Level: getEnv("REPOSITORY_SERVICE_LOG_LEVEL", "info"),
+		},
+		Auth: AuthConfig{
+			Secret:   getEnv("AUTH_JWT_SECRET", "change-me"),
+			Issuer:   getEnv("AUTH_JWT_ISSUER", "enterprise-microservice-system"),
+			Audience: getEnv("AUTH_JWT_AUDIENCE", "enterprise-microservice-system"),
+			TokenTTL: time.Duration(tokenTTLMinutes) * time.Minute,
 		},
 	}
 

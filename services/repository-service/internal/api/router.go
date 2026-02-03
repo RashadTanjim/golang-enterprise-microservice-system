@@ -1,6 +1,7 @@
 package api
 
 import (
+	"enterprise-microservice-system/common/auth"
 	"enterprise-microservice-system/common/logger"
 	"enterprise-microservice-system/common/metrics"
 	"enterprise-microservice-system/common/middleware"
@@ -17,6 +18,7 @@ type Router struct {
 	logger      *logger.Logger
 	metrics     *metrics.Metrics
 	rateLimiter *middleware.RateLimiter
+	authConfig  auth.Config
 }
 
 // NewRouter creates a new router
@@ -25,12 +27,14 @@ func NewRouter(
 	logger *logger.Logger,
 	metrics *metrics.Metrics,
 	rateLimiter *middleware.RateLimiter,
+	authConfig auth.Config,
 ) *Router {
 	return &Router{
 		handler:     handler,
 		logger:      logger,
 		metrics:     metrics,
 		rateLimiter: rateLimiter,
+		authConfig:  authConfig,
 	}
 }
 
@@ -57,15 +61,17 @@ func (r *Router) Setup() *gin.Engine {
 
 	// API v1 routes
 	v1 := router.Group("/api/v1")
+
+	protected := v1.Group("/")
+	protected.Use(middleware.AuthMiddleware(r.authConfig))
+
+	repositories := protected.Group("/repositories")
 	{
-		repositories := v1.Group("/repositories")
-		{
-			repositories.POST("", r.handler.CreateRepository)
-			repositories.GET("", r.handler.ListRepositories)
-			repositories.GET("/:id", r.handler.GetRepository)
-			repositories.PUT("/:id", r.handler.UpdateRepository)
-			repositories.DELETE("/:id", r.handler.DeleteRepository)
-		}
+		repositories.POST("", middleware.RequireRoles("admin"), r.handler.CreateRepository)
+		repositories.GET("", middleware.RequireRoles("admin", "user"), r.handler.ListRepositories)
+		repositories.GET("/:id", middleware.RequireRoles("admin", "user"), r.handler.GetRepository)
+		repositories.PUT("/:id", middleware.RequireRoles("admin"), r.handler.UpdateRepository)
+		repositories.DELETE("/:id", middleware.RequireRoles("admin"), r.handler.DeleteRepository)
 	}
 
 	return router

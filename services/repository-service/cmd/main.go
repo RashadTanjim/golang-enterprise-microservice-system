@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"enterprise-microservice-system/common/auth"
 	"enterprise-microservice-system/common/logger"
 	"enterprise-microservice-system/common/metrics"
 	"enterprise-microservice-system/common/middleware"
@@ -67,8 +68,15 @@ func main() {
 	// Initialize rate limiter
 	rateLimiter := middleware.NewRateLimiter(cfg.Server.RateLimit, cfg.Server.RateLimit*2)
 
+	authConfig := auth.Config{
+		Secret:   cfg.Auth.Secret,
+		Issuer:   cfg.Auth.Issuer,
+		Audience: cfg.Auth.Audience,
+		TokenTTL: cfg.Auth.TokenTTL,
+	}
+
 	// Setup router
-	routerSetup := api.NewRouter(repoHandler, log, metricsCollector, rateLimiter)
+	routerSetup := api.NewRouter(repoHandler, log, metricsCollector, rateLimiter, authConfig)
 	router := routerSetup.Setup()
 
 	// Create HTTP server
