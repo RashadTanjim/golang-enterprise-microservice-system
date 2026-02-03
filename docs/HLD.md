@@ -1,11 +1,11 @@
 # High-Level Design (HLD) – Enterprise Microservice System
 
 ## 1) Overview
-This system is a production-ready microservice architecture built with Go. It consists of two core services (User Service and Order Service), each with its own database, shared libraries for cross-cutting concerns, and supporting infrastructure for observability, authentication, and CI.
+This system is a production-ready microservice architecture built with Go. It consists of three core services (User Service, Order Service, and Repository Service), each with its own database, shared libraries for cross-cutting concerns, and supporting infrastructure for observability, authentication, and CI.
 
 ## 2) Goals
 - Provide clean, maintainable microservices with clear boundaries.
-- Support full CRUD operations for users and orders.
+- Support full CRUD operations for users, orders, and repositories.
 - Ensure resilience with circuit breakers and rate limits.
 - Provide observability (metrics, logs, health checks).
 - Secure APIs with JWT authentication and role-based access control.
@@ -28,6 +28,10 @@ This system is a production-ready microservice architecture built with Go. It co
   - Calls User Service to validate user existence and status.
   - Uses circuit breaker for resilience.
 
+- **Repository Service** (port 8083)
+  - Manages repository CRUD and validation.
+  - Enforces role-based access for write operations.
+
 ### 4.2 Frontend Portal
 - **Vue.js Portal** (port 8080 via gateway)
   - Enterprise UI for operations, observability, and documentation.
@@ -48,6 +52,7 @@ This system is a production-ready microservice architecture built with Go. It co
 ### 4.5 Data Stores
 - **User DB**: PostgreSQL (userdb)
 - **Order DB**: PostgreSQL (orderdb)
+- **Repository DB**: PostgreSQL (repositorydb)
 
 Each service owns its database (database-per-service).
 
@@ -77,10 +82,11 @@ Each service owns its database (database-per-service).
 - Migrations run on service startup and can be triggered manually with:
   - `make migrate-user`
   - `make migrate-order`
+- Repository Service uses GORM auto-migrations on startup.
 
 ## 8) Observability
-- **Health checks**: `/health/user`, `/health/order` via gateway.
-- **Metrics**: `/metrics/user`, `/metrics/order` (Prometheus format).
+- **Health checks**: `/health/user`, `/health/order`, `/health/repository` via gateway.
+- **Metrics**: `/metrics/user`, `/metrics/order`, `/metrics/repository` (Prometheus format).
 - **Structured logs**: Zap-based JSON logs with request IDs.
 
 ## 9) CI/CD
@@ -95,8 +101,8 @@ Each service owns its database (database-per-service).
 
 ## 11) API Docs
 - **Swagger UI** per service:
-  - Gateway: `http://localhost:8080/swagger/user/`, `http://localhost:8080/swagger/order/`
-  - Direct: `http://localhost:8081/swagger/index.html`, `http://localhost:8082/swagger/index.html`
+  - Gateway: `http://localhost:8080/swagger/user/`, `http://localhost:8080/swagger/order/`, `http://localhost:8080/swagger/repository/`
+  - Direct: `http://localhost:8081/swagger/index.html`, `http://localhost:8082/swagger/index.html`, `http://localhost:8083/swagger/index.html`
 
 ## 12) Risks and Future Enhancements
 - Harden gateway with WAF and rate limiting policies.

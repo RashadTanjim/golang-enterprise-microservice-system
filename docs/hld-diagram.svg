@@ -29,26 +29,34 @@
   <text x="360" y="180" class="small">Routing + SPA hosting</text>
 
   <!-- User Service -->
-  <rect x="640" y="80" width="260" height="90" class="box" />
-  <text x="700" y="125" class="label">User Service</text>
-  <text x="690" y="150" class="small">JWT issuance, User CRUD</text>
+  <rect x="640" y="60" width="260" height="90" class="box" />
+  <text x="700" y="105" class="label">User Service</text>
+  <text x="690" y="130" class="small">JWT issuance, User CRUD</text>
 
   <!-- Order Service -->
-  <rect x="640" y="220" width="260" height="90" class="box" />
-  <text x="695" y="265" class="label">Order Service</text>
-  <text x="675" y="290" class="small">Order CRUD, User validation</text>
+  <rect x="640" y="200" width="260" height="90" class="box" />
+  <text x="695" y="245" class="label">Order Service</text>
+  <text x="675" y="270" class="small">Order CRUD, User validation</text>
+
+  <!-- Repository Service -->
+  <rect x="640" y="340" width="260" height="90" class="box" />
+  <text x="680" y="385" class="label">Repository Service</text>
+  <text x="675" y="410" class="small">Repository CRUD, access control</text>
 
   <!-- Databases -->
-  <rect x="940" y="80" width="200" height="80" class="db" />
-  <text x="980" y="125" class="label">User DB</text>
+  <rect x="940" y="60" width="200" height="80" class="db" />
+  <text x="980" y="105" class="label">User DB</text>
 
-  <rect x="940" y="220" width="200" height="80" class="db" />
-  <text x="980" y="265" class="label">Order DB</text>
+  <rect x="940" y="200" width="200" height="80" class="db" />
+  <text x="980" y="245" class="label">Order DB</text>
+
+  <rect x="940" y="340" width="200" height="80" class="db" />
+  <text x="965" y="385" class="label">Repository DB</text>
 
   <!-- Observability -->
-  <rect x="640" y="370" width="260" height="80" class="obs" />
-  <text x="680" y="415" class="label">Metrics / Logs</text>
-  <text x="675" y="438" class="small">Prometheus + structured logs</text>
+  <rect x="640" y="500" width="260" height="80" class="obs" />
+  <text x="680" y="545" class="label">Metrics / Logs</text>
+  <text x="675" y="568" class="small">Prometheus + structured logs</text>
 
   <!-- Auth -->
   <rect x="60" y="240" width="220" height="70" class="box" />
@@ -56,23 +64,26 @@
 
   <!-- Arrows -->
   <line x1="280" y1="160" x2="340" y2="160" class="arrow" />
-  <line x1="560" y1="140" x2="640" y2="125" class="arrow" />
-  <line x1="560" y1="180" x2="640" y2="255" class="arrow" />
+  <line x1="560" y1="140" x2="640" y2="105" class="arrow" />
+  <line x1="560" y1="180" x2="640" y2="245" class="arrow" />
+  <line x1="560" y1="210" x2="640" y2="385" class="arrow" />
 
-  <line x1="900" y1="125" x2="940" y2="120" class="arrow" />
-  <line x1="900" y1="255" x2="940" y2="260" class="arrow" />
+  <line x1="900" y1="105" x2="940" y2="100" class="arrow" />
+  <line x1="900" y1="245" x2="940" y2="240" class="arrow" />
+  <line x1="900" y1="385" x2="940" y2="380" class="arrow" />
 
   <!-- Order -> User (service-to-service) -->
-  <line x1="640" y1="255" x2="640" y2="125" class="arrow dashed" />
-  <text x="650" y="200" class="small">Service call</text>
+  <line x1="640" y1="245" x2="640" y2="105" class="arrow dashed" />
+  <text x="650" y="190" class="small">Service call</text>
 
   <!-- Auth link -->
   <line x1="170" y1="240" x2="170" y2="200" class="arrow dashed" />
   <text x="195" y="220" class="small">Bearer token</text>
 
   <!-- Observability links -->
-  <line x1="770" y1="170" x2="770" y2="370" class="arrow" />
-  <line x1="770" y1="310" x2="770" y2="370" class="arrow" />
+  <line x1="720" y1="150" x2="720" y2="500" class="arrow" />
+  <line x1="770" y1="290" x2="770" y2="500" class="arrow" />
+  <line x1="820" y1="430" x2="820" y2="500" class="arrow" />
 
   <!-- Legend -->
   <rect x="60" y="520" width="820" height="120" fill="#ffffff" stroke="#d2dbe3" />

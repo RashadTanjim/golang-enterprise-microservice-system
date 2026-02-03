@@ -153,6 +153,10 @@ services:
       - REPOSITORY_SERVICE_DB_NAME=repositorydb
       - REPOSITORY_SERVICE_LOG_LEVEL=info
       - REPOSITORY_SERVICE_RATE_LIMIT=100
+      - AUTH_JWT_SECRET=change-me
+      - AUTH_JWT_ISSUER=enterprise-microservice-system
+      - AUTH_JWT_AUDIENCE=enterprise-microservice-system
+      - AUTH_TOKEN_TTL_MINUTES=60
     ports:
       - "8083:8083"
     depends_on:
@@ -193,6 +197,8 @@ services:
       user-service:
         condition: service_healthy
       order-service:
+        condition: service_healthy
+      repository-service:
         condition: service_healthy
     restart: unless-stopped
     networks:

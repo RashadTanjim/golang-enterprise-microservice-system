@@ -1,4 +1,4 @@
-.PHONY: help build run test lint link-check swagger frontend-install frontend-test frontend-build docker-up docker-down clean migrate-user migrate-order
+.PHONY: help build run test lint link-check swagger frontend-install frontend-test frontend-build docker-up docker-down clean migrate-user migrate-order run-user run-order run-repository test-user test-order test-repository
 
 help: ## Display this help screen
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -8,6 +8,8 @@ build: ## Build all services
 	@cd services/user-service && go build -o ../../bin/user-service ./cmd/main.go
 	@echo "Building order-service..."
 	@cd services/order-service && go build -o ../../bin/order-service ./cmd/main.go
+	@echo "Building repository-service..."
+	@cd services/repository-service && go build -o ../../bin/repository-service ./cmd/main.go
 	@echo "Build complete!"
 
 run-user: ## Run user service
@@ -16,9 +18,12 @@ run-user: ## Run user service
 run-order: ## Run order service
 	@cd services/order-service && go run ./cmd/main.go
 
+run-repository: ## Run repository service
+	@cd services/repository-service && go run ./cmd/main.go
+
 run: ## Run all services concurrently
 	@echo "Starting all services..."
-	@make -j2 run-user run-order
+	@make -j3 run-user run-order run-repository
 
 test: ## Run all tests
 	@echo "Running tests..."
@@ -34,6 +39,10 @@ test-order: ## Run order service tests
 	@echo "Testing order-service..."
 	@cd services/order-service && go test -v -race ./...
 
+test-repository: ## Run repository service tests
+	@echo "Testing repository-service..."
+	@cd services/repository-service && go test -v -race ./...
+
 lint: ## Run linter (requires golangci-lint)
 	@echo "Running linter..."
 	@golangci-lint run ./... || echo "golangci-lint not installed. Run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin"
@@ -47,7 +56,8 @@ swagger: ## Generate Swagger docs (requires swag)
 	@SWAG=$$(command -v swag || command -v $$(go env GOPATH)/bin/swag); \
 	if [ -z "$$SWAG" ]; then echo "swag not installed. Run: go install github.com/swaggo/swag/cmd/swag@v1.16.4"; exit 1; fi; \
 	(cd services/user-service && $$SWAG init -g cmd/main.go -o docs --parseDependency --parseInternal); \
-	(cd services/order-service && $$SWAG init -g cmd/main.go -o docs --parseDependency --parseInternal)
+	(cd services/order-service && $$SWAG init -g cmd/main.go -o docs --parseDependency --parseInternal); \
+	(cd services/repository-service && $$SWAG init -g cmd/main.go -o docs --parseDependency --parseInternal)
 
 frontend-install: ## Install frontend dependencies
 	@cd frontend && npm install

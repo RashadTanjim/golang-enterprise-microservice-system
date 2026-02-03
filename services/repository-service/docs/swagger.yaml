@@ -1,0 +1,270 @@
+definitions:
+  enterprise-microservice-system_services_repository-service_internal_model.CreateRepositoryRequest:
+    properties:
+      description:
+        maxLength: 1000
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      owner_id:
+        type: integer
+      url:
+        type: string
+      visibility:
+        enum:
+        - public
+        - private
+        type: string
+    required:
+    - name
+    - owner_id
+    type: object
+  enterprise-microservice-system_services_repository-service_internal_model.Repository:
+    properties:
+      active:
+        type: boolean
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      owner_id:
+        type: integer
+      updated_at:
+        type: string
+      url:
+        type: string
+      visibility:
+        type: string
+    type: object
+  enterprise-microservice-system_services_repository-service_internal_model.UpdateRepositoryRequest:
+    properties:
+      active:
+        type: boolean
+      description:
+        maxLength: 1000
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      url:
+        type: string
+      visibility:
+        enum:
+        - public
+        - private
+        type: string
+    type: object
+  response.ErrorInfo:
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+    type: object
+  response.Meta:
+    properties:
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total_count:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  response.Response:
+    properties:
+      data: {}
+      error:
+        $ref: '#/definitions/response.ErrorInfo'
+      meta:
+        $ref: '#/definitions/response.Meta'
+      success:
+        type: boolean
+    type: object
+info:
+  contact: {}
+paths:
+  /repositories:
+    get:
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: page_size
+        type: integer
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      - description: Filter by owner ID
+        in: query
+        name: owner_id
+        type: integer
+      - description: Filter by visibility (public/private)
+        in: query
+        name: visibility
+        type: string
+      - description: Filter by active status
+        in: query
+        name: active
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/enterprise-microservice-system_services_repository-service_internal_model.Repository'
+                  type: array
+              type: object
+      security:
+      - BearerAuth: []
+      summary: List repositories
+      tags:
+      - repositories
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Repository data
+        in: body
+        name: repository
+        required: true
+        schema:
+          $ref: '#/definitions/enterprise-microservice-system_services_repository-service_internal_model.CreateRepositoryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/enterprise-microservice-system_services_repository-service_internal_model.Repository'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Create a new repository
+      tags:
+      - repositories
+  /repositories/{id}:
+    delete:
+      parameters:
+      - description: Repository ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Delete a repository
+      tags:
+      - repositories
+    get:
+      parameters:
+      - description: Repository ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/enterprise-microservice-system_services_repository-service_internal_model.Repository'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get a repository by ID
+      tags:
+      - repositories
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Repository ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Repository update data
+        in: body
+        name: repository
+        required: true
+        schema:
+          $ref: '#/definitions/enterprise-microservice-system_services_repository-service_internal_model.UpdateRepositoryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/enterprise-microservice-system_services_repository-service_internal_model.Repository'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Update a repository
+      tags:
+      - repositories
+swagger: "2.0"

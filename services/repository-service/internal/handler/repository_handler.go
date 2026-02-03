@@ -31,6 +31,7 @@ func NewRepositoryHandler(service service.RepositoryService, logger *logger.Logg
 // @Tags repositories
 // @Accept json
 // @Produce json
+// @Security BearerAuth
 // @Param repository body model.CreateRepositoryRequest true "Repository data"
 // @Success 201 {object} response.Response{data=model.Repository}
 // @Failure 400 {object} response.Response
@@ -59,6 +60,7 @@ func (h *RepositoryHandler) CreateRepository(c *gin.Context) {
 // @Summary Get a repository by ID
 // @Tags repositories
 // @Produce json
+// @Security BearerAuth
 // @Param id path int true "Repository ID"
 // @Success 200 {object} response.Response{data=model.Repository}
 // @Failure 404 {object} response.Response
@@ -86,6 +88,7 @@ func (h *RepositoryHandler) GetRepository(c *gin.Context) {
 // @Tags repositories
 // @Accept json
 // @Produce json
+// @Security BearerAuth
 // @Param id path int true "Repository ID"
 // @Param repository body model.UpdateRepositoryRequest true "Repository update data"
 // @Success 200 {object} response.Response{data=model.Repository}
@@ -122,6 +125,7 @@ func (h *RepositoryHandler) UpdateRepository(c *gin.Context) {
 // @Summary Delete a repository
 // @Tags repositories
 // @Produce json
+// @Security BearerAuth
 // @Param id path int true "Repository ID"
 // @Success 200 {object} response.Response
 // @Failure 404 {object} response.Response
@@ -148,6 +152,7 @@ func (h *RepositoryHandler) DeleteRepository(c *gin.Context) {
 // @Summary List repositories
 // @Tags repositories
 // @Produce json
+// @Security BearerAuth
 // @Param page query int false "Page number" default(1)
 // @Param page_size query int false "Page size" default(10)
 // @Param search query string false "Search term"

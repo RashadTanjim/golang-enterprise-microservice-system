@@ -25,18 +25,18 @@ This system follows a **microservice architecture** with clean separation of con
 │ Vue Portal + Nginx    │  Port: 8080
 └───────────┬───────────┘
             │
-   ┌────────▼────────┐         ┌────────▼────────┐
-   │   User Service  │         │  Order Service  │
-   │   Port: 8081    │◄────────┤   Port: 8082    │
-   └────────┬────────┘         └────────┬────────┘
-            │                           │
-       ┌────▼────┐                 ┌────▼────┐
-       │ User DB │                 │ Order DB│
-       └─────────┘                 └─────────┘
-            │                           │
-       ┌────▼───────────────────────────▼────┐
-       │         Prometheus Metrics          │
-       └─────────────────────────────────────┘
+   ┌────────▼────────┐   ┌────────▼────────┐   ┌────────▼────────────┐
+   │   User Service  │   │  Order Service  │   │ Repository Service  │
+   │   Port: 8081    │◄──┤   Port: 8082    │   │   Port: 8083        │
+   └────────┬────────┘   └────────┬────────┘   └────────┬────────────┘
+            │                    │                     │
+       ┌────▼────┐          ┌────▼────┐          ┌──────▼────────┐
+       │ User DB │          │ Order DB│          │ Repository DB │
+       └─────────┘          └─────────┘          └───────────────┘
+            │                    │                     │
+       ┌────▼────────────────────▼─────────────────────▼────┐
+       │                 Prometheus Metrics                 │
+       └────────────────────────────────────────────────────┘
 ```
 
 ![HLD](docs/hld-diagram.svg)
@@ -124,6 +124,20 @@ enterprise-microservice-system/
 │       ├── Dockerfile            # Container definition
 │       ├── .air.toml             # Hot reload config
 │       └── docs/                 # Swagger docs (generated)
+│   └── repository-service/       # Repository management service
+│       ├── cmd/
+│       │   ├── main.go           # Entry point
+│       │   └── docs.go           # Swagger metadata
+│       ├── internal/
+│       │   ├── api/              # Route definitions
+│       │   ├── config/           # Configuration
+│       │   ├── handler/          # HTTP handlers
+│       │   ├── model/            # Domain models
+│       │   ├── repository/       # Data access layer
+│       │   └── service/          # Business logic
+│       ├── tests/                # Unit tests
+│       ├── Dockerfile            # Container definition
+│       └── docs/                 # Swagger docs (generated)
 ├── monitoring/
 │   └── prometheus.yml            # Prometheus configuration
 ├── docs/                          # API tooling and docs assets
@@ -154,7 +168,8 @@ enterprise-microservice-system/
 ## Features
 
 ### 1. CRUD Operations
-- Full RESTful APIs for users and orders
+- Full RESTful APIs for users, orders, and repositories
+- Repository Service manages repository metadata (name, owner, visibility, URL) with RBAC enforcement
 - Request validation using Gin's validator
 - Pagination and filtering support
 - Soft delete functionality
@@ -248,6 +263,7 @@ make docker-up
 This will start:
 - User Service (http://localhost:8081)
 - Order Service (http://localhost:8082)
+- Repository Service (http://localhost:8083)
 - Web Portal + Gateway (http://localhost:8080)
 - PostgreSQL databases
 - Prometheus (http://localhost:9090)
@@ -256,8 +272,10 @@ This will start:
 ```bash
 curl http://localhost:8081/health
 curl http://localhost:8082/health
+curl http://localhost:8083/health
 curl http://localhost:8080/health/user
 curl http://localhost:8080/health/order
+curl http://localhost:8080/health/repository
 ```
 
 5. Open the portal:
@@ -287,6 +305,7 @@ Health checks (via gateway):
 ```bash
 curl http://localhost:8080/health/user
 curl http://localhost:8080/health/order
+curl http://localhost:8080/health/repository
 ```
 
 Issue a token (via gateway):
@@ -318,16 +337,27 @@ curl -X POST http://localhost:8080/api/v1/orders \
   -d '{"user_id":1,"product_id":"PROD-1","quantity":1,"total_price":9.99}'
 ```
 
+Repository endpoints (via gateway):
+```bash
+curl -H "Authorization: Bearer <token>" http://localhost:8080/api/v1/repositories
+curl -X POST http://localhost:8080/api/v1/repositories \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{"name":"repo-one","owner_id":1,"visibility":"private","url":"https://example.com/repo-one"}'
+```
+
 Metrics (via gateway):
 ```bash
 curl http://localhost:8080/metrics/user
 curl http://localhost:8080/metrics/order
+curl http://localhost:8080/metrics/repository
 ```
 
 Swagger UI (via gateway):
 ```
 http://localhost:8080/swagger/user/
 http://localhost:8080/swagger/order/
+http://localhost:8080/swagger/repository/
 ```
 
 ### Local Development Setup
@@ -344,7 +374,7 @@ make install-tools
 
 3. Start databases:
 ```bash
-docker-compose up -d user-db order-db
+docker-compose up -d user-db order-db repository-db
 ```
 
 4. Run migrations (optional if you prefer manual control):
@@ -365,7 +395,12 @@ In terminal 2:
 make run-order
 ```
 
-Or run both concurrently:
+In terminal 3:
+```bash
+make run-repository
+```
+
+Or run all services concurrently:
 ```bash
 make run
 ```
@@ -419,6 +454,18 @@ make dev-order
 | ORDER_SERVICE_RATE_LIMIT | Requests per second | 100 |
 | ORDER_SERVICE_USER_SERVICE_URL | User service URL | http://localhost:8081 |
 
+#### Repository Service
+| Variable | Description | Default |
+|----------|-------------|---------|
+| REPOSITORY_SERVICE_PORT | HTTP port | 8083 |
+| REPOSITORY_SERVICE_DB_HOST | Database host | localhost |
+| REPOSITORY_SERVICE_DB_PORT | Database port | 5432 |
+| REPOSITORY_SERVICE_DB_USER | Database user | postgres |
+| REPOSITORY_SERVICE_DB_PASSWORD | Database password | postgres |
+| REPOSITORY_SERVICE_DB_NAME | Database name | repositorydb |
+| REPOSITORY_SERVICE_LOG_LEVEL | Log level | info |
+| REPOSITORY_SERVICE_RATE_LIMIT | Requests per second | 100 |
+
 #### Circuit Breaker
 | Variable | Description | Default |
 |----------|-------------|---------|
@@ -442,8 +489,8 @@ make dev-order
 ## API Documentation
 
 Swagger UI:
-- Via gateway: http://localhost:8080/swagger/user/ and http://localhost:8080/swagger/order/
-- Direct: http://localhost:8081/swagger/index.html and http://localhost:8082/swagger/index.html
+- Via gateway: http://localhost:8080/swagger/user/, http://localhost:8080/swagger/order/, http://localhost:8080/swagger/repository/
+- Direct: http://localhost:8081/swagger/index.html, http://localhost:8082/swagger/index.html, http://localhost:8083/swagger/index.html
 
 ### Authentication
 
@@ -552,6 +599,55 @@ Content-Type: application/json
 DELETE /api/v1/orders/{id}
 ```
 
+### Repository Service (Port 8083)
+
+Repository endpoints require a valid JWT. Admin or user roles can read repositories; admin is required for create, update, and delete.
+
+#### Create Repository
+```bash
+POST /api/v1/repositories
+Content-Type: application/json
+
+{
+  "name": "repo-one",
+  "description": "Core services repo",
+  "owner_id": 1,
+  "visibility": "private",
+  "url": "https://example.com/repo-one"
+}
+```
+
+#### Get Repository
+```bash
+GET /api/v1/repositories/{id}
+```
+
+#### List Repositories
+```bash
+GET /api/v1/repositories?page=1&page_size=10&search=core&owner_id=1&visibility=public&active=true
+```
+
+#### Update Repository
+```bash
+PUT /api/v1/repositories/{id}
+Content-Type: application/json
+
+{
+  "description": "Updated description",
+  "visibility": "public",
+  "active": true
+}
+```
+
+#### Delete Repository
+```bash
+DELETE /api/v1/repositories/{id}
+```
+
+### Repository Visibility Values
+- `private` - Private repository (default)
+- `public` - Public repository
+
 ### Order Status Values
 - `pending` - Order created
 - `confirmed` - Order confirmed
@@ -585,6 +681,7 @@ make test
 ```bash
 make test-user
 make test-order
+make test-repository
 ```
 
 ### Run Linter
@@ -620,9 +717,11 @@ make build             # Build all services
 make run              # Run all services
 make run-user         # Run user service
 make run-order        # Run order service
+make run-repository   # Run repository service
 make migrate-user     # Run user database migrations
 make migrate-order    # Run order database migrations
 make test             # Run all tests
+make test-repository  # Run repository service tests
 make lint             # Run linter
 make link-check       # Check docs links
 make swagger          # Generate Swagger docs
@@ -668,6 +767,9 @@ docker build -t user-service:latest -f services/user-service/Dockerfile .
 
 # Build order service
 docker build -t order-service:latest -f services/order-service/Dockerfile .
+
+# Build repository service
+docker build -t repository-service:latest -f services/repository-service/Dockerfile .
 ```
 
 ### Production Considerations
@@ -714,6 +816,7 @@ Key metrics to monitor:
 1. **Request Metrics**
    - `user_service_requests_total` - Total HTTP requests
    - `order_service_requests_total` - Total HTTP requests
+   - `repository_service_requests_total` - Total HTTP requests
    - `*_request_duration_seconds` - Request latency
 
 2. **Error Metrics**
@@ -745,6 +848,7 @@ changes(order_service_circuit_breaker_state{service="user-service"}[5m]) > 0
 # Check service health
 curl http://localhost:8081/health
 curl http://localhost:8082/health
+curl http://localhost:8083/health
 ```
 
 ## Troubleshooting

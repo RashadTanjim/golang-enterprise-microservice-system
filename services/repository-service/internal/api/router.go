@@ -5,11 +5,14 @@ import (
 	"enterprise-microservice-system/common/logger"
 	"enterprise-microservice-system/common/metrics"
 	"enterprise-microservice-system/common/middleware"
+	repodocs "enterprise-microservice-system/services/repository-service/docs"
 	"enterprise-microservice-system/services/repository-service/internal/handler"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 // Router sets up all routes for the repository service
@@ -58,6 +61,9 @@ func (r *Router) Setup() *gin.Engine {
 
 	// Metrics endpoint (Prometheus)
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
+
+	repodocs.SwaggerInfo.BasePath = "/api/v1"
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// API v1 routes
 	v1 := router.Group("/api/v1")
