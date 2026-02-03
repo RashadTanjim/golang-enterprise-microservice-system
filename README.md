@@ -119,6 +119,7 @@ enterprise-microservice-system/
 ├── monitoring/
 │   └── prometheus.yml            # Prometheus configuration
 ├── docs/                          # API tooling and docs assets
+│   ├── HLD.md
 │   ├── collection/
 │   │   └── enterprise-microservice-system.postman_collection.json
 │   └── enterprise-microservice-system.postman_environment.json
@@ -562,6 +563,9 @@ make lint
 - Import `docs/collection/enterprise-microservice-system.postman_collection.json` and `docs/enterprise-microservice-system.postman_environment.json`.
 - Run “Auth → Issue Token” to populate the `token` environment variable before calling protected endpoints.
 - Collection requests include assertions so the Collection Runner can execute a full automated run.
+
+### High-Level Design
+- See `docs/HLD.md` for the system architecture and data flow details.
 ### Swagger
 - Swagger UI is served at `/swagger/index.html` for each service.
 - Regenerate docs with `make swagger` after updating handler annotations.
