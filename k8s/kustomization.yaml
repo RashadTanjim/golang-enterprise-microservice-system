@@ -11,5 +11,4 @@ resources:
   - order-service.yaml
   - repository-service.yaml
   - web-portal.yaml
-  - migrations.yaml
   - ingress.yaml
