@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700">
+  <defs>
+    <style>
+      .title { font: 700 28px Arial, sans-serif; fill: #0b1f2a; }
+      .label { font: 600 16px Arial, sans-serif; fill: #0b1f2a; }
+      .small { font: 400 13px Arial, sans-serif; fill: #234; }
+      .box { fill: #f7fbff; stroke: #1b4b6f; stroke-width: 2; rx: 10; }
+      .db { fill: #fff6e6; stroke: #8b5a00; stroke-width: 2; rx: 10; }
+      .obs { fill: #f2fff7; stroke: #2f7d4a; stroke-width: 2; rx: 10; }
+      .arrow { stroke: #1b4b6f; stroke-width: 2.5; fill: none; marker-end: url(#arrowhead); }
+      .dashed { stroke-dasharray: 6 6; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#1b4b6f" />
+    </marker>
+  </defs>
+
+  <text x="40" y="50" class="title">Enterprise Microservice System – HLD</text>
+
+  <!-- Client -->
+  <rect x="80" y="120" width="200" height="70" class="box" />
+  <text x="125" y="162" class="label">Client / UI</text>
+
+  <!-- User Service -->
+  <rect x="370" y="90" width="260" height="90" class="box" />
+  <text x="430" y="135" class="label">User Service</text>
+  <text x="420" y="160" class="small">JWT issuance, User CRUD</text>
+
+  <!-- Order Service -->
+  <rect x="370" y="230" width="260" height="90" class="box" />
+  <text x="425" y="275" class="label">Order Service</text>
+  <text x="405" y="300" class="small">Order CRUD, User validation</text>
+
+  <!-- Databases -->
+  <rect x="720" y="90" width="220" height="80" class="db" />
+  <text x="770" y="135" class="label">User DB</text>
+
+  <rect x="720" y="230" width="220" height="80" class="db" />
+  <text x="770" y="275" class="label">Order DB</text>
+
+  <!-- Observability -->
+  <rect x="370" y="390" width="260" height="80" class="obs" />
+  <text x="410" y="435" class="label">Metrics / Logs</text>
+  <text x="410" y="458" class="small">Prometheus + structured logs</text>
+
+  <!-- Auth -->
+  <rect x="80" y="240" width="200" height="70" class="box" />
+  <text x="115" y="282" class="label">JWT Auth</text>
+
+  <!-- Arrows -->
+  <line x1="280" y1="155" x2="370" y2="135" class="arrow" />
+  <line x1="280" y1="275" x2="370" y2="275" class="arrow" />
+
+  <line x1="630" y1="135" x2="720" y2="130" class="arrow" />
+  <line x1="630" y1="275" x2="720" y2="270" class="arrow" />
+
+  <!-- Order -> User (service-to-service) -->
+  <line x1="630" y1="275" x2="630" y2="135" class="arrow dashed" />
+  <text x="640" y="210" class="small">Service call</text>
+
+  <!-- Auth link -->
+  <line x1="180" y1="240" x2="180" y2="190" class="arrow" />
+  <line x1="280" y1="275" x2="280" y2="155" class="arrow dashed" />
+  <text x="205" y="210" class="small">Bearer token</text>
+
+  <!-- Observability links -->
+  <line x1="500" y1="180" x2="500" y2="390" class="arrow" />
+  <line x1="500" y1="320" x2="500" y2="390" class="arrow" />
+
+  <!-- Legend -->
+  <rect x="80" y="520" width="860" height="120" fill="#ffffff" stroke="#d2dbe3" />
+  <text x="100" y="555" class="label">Legend</text>
+  <text x="100" y="580" class="small">Solid arrows: primary request/response flow</text>
+  <text x="100" y="605" class="small">Dashed arrows: internal service-to-service calls or auth flow</text>
+</svg>

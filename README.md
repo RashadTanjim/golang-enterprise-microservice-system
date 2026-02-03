@@ -35,6 +35,8 @@ This system follows a **microservice architecture** with clean separation of con
     └─────────────────────────────────────┘
 ```
 
+![HLD](docs/hld-diagram.svg)
+
 ### Key Architectural Decisions
 
 - **Clean Architecture**: Each service follows the clean architecture pattern with clear separation between transport, service, domain, and repository layers
@@ -120,9 +122,10 @@ enterprise-microservice-system/
 │   └── prometheus.yml            # Prometheus configuration
 ├── docs/                          # API tooling and docs assets
 │   ├── HLD.md
-│   ├── collection/
-│   │   └── enterprise-microservice-system.postman_collection.json
-│   └── enterprise-microservice-system.postman_environment.json
+│   ├── hld-diagram.svg
+│   └── collections/
+│       ├── enterprise-microservice-system.postman_collection.json
+│       └── enterprise-microservice-system.postman_environment.json
 ├── docker-compose.yml            # Container orchestration
 ├── .lychee.toml                   # Link checker configuration
 ├── Makefile                      # Build and run commands
@@ -560,7 +563,7 @@ make lint
 - Runs `make test` and link checks on every push and pull request.
 
 ### Postman Collection
-- Import `docs/collection/enterprise-microservice-system.postman_collection.json` and `docs/enterprise-microservice-system.postman_environment.json`.
+- Import `docs/collections/enterprise-microservice-system.postman_collection.json` and `docs/collections/enterprise-microservice-system.postman_environment.json`.
 - Run “Auth → Issue Token” to populate the `token` environment variable before calling protected endpoints.
 - Collection requests include assertions so the Collection Runner can execute a full automated run.
 
