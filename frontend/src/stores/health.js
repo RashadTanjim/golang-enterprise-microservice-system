@@ -38,7 +38,7 @@ export const useHealthStore = defineStore('health', {
       } catch (error) {
         this[service] = {
           status: 'Degraded',
-          message: 'Service did not respond to health check.',
+          message: error?.message || 'Service did not respond to health check.',
           checkedAt: new Date().toLocaleTimeString(),
           variant: 'warning'
         };
