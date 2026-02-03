@@ -27,6 +27,16 @@ func NewOrderHandler(service service.OrderService, logger *logger.Logger) *Order
 }
 
 // CreateOrder handles order creation
+// @Summary Create a new order
+// @Tags orders
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param order body model.CreateOrderRequest true "Order data"
+// @Success 201 {object} response.Response{data=model.Order}
+// @Failure 400 {object} response.Response
+// @Failure 404 {object} response.Response
+// @Router /orders [post]
 func (h *OrderHandler) CreateOrder(c *gin.Context) {
 	var req model.CreateOrderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -47,6 +57,14 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 }
 
 // GetOrder handles retrieving an order by ID
+// @Summary Get an order by ID
+// @Tags orders
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Order ID"
+// @Success 200 {object} response.Response{data=model.OrderWithUser}
+// @Failure 404 {object} response.Response
+// @Router /orders/{id} [get]
 func (h *OrderHandler) GetOrder(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
@@ -66,6 +84,17 @@ func (h *OrderHandler) GetOrder(c *gin.Context) {
 }
 
 // UpdateOrder handles updating an order
+// @Summary Update an order
+// @Tags orders
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Order ID"
+// @Param order body model.UpdateOrderRequest true "Order update data"
+// @Success 200 {object} response.Response{data=model.Order}
+// @Failure 400 {object} response.Response
+// @Failure 404 {object} response.Response
+// @Router /orders/{id} [put]
 func (h *OrderHandler) UpdateOrder(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
@@ -93,6 +122,14 @@ func (h *OrderHandler) UpdateOrder(c *gin.Context) {
 }
 
 // DeleteOrder handles deleting an order
+// @Summary Delete an order
+// @Tags orders
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Order ID"
+// @Success 200 {object} response.Response
+// @Failure 404 {object} response.Response
+// @Router /orders/{id} [delete]
 func (h *OrderHandler) DeleteOrder(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
@@ -112,6 +149,17 @@ func (h *OrderHandler) DeleteOrder(c *gin.Context) {
 }
 
 // ListOrders handles listing orders with pagination
+// @Summary List orders
+// @Tags orders
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "Page number" default(1)
+// @Param page_size query int false "Page size" default(10)
+// @Param user_id query int false "Filter by user ID"
+// @Param status query string false "Filter by status"
+// @Param product_id query string false "Filter by product ID"
+// @Success 200 {object} response.Response{data=[]model.Order}
+// @Router /orders [get]
 func (h *OrderHandler) ListOrders(c *gin.Context) {
 	var query model.ListOrdersQuery
 	if err := c.ShouldBindQuery(&query); err != nil {

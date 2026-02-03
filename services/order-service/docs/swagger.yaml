@@ -1,0 +1,301 @@
+definitions:
+  enterprise-microservice-system_services_order-service_internal_model.CreateOrderRequest:
+    properties:
+      product_id:
+        type: string
+      quantity:
+        minimum: 1
+        type: integer
+      total_price:
+        minimum: 0
+        type: number
+      user_id:
+        type: integer
+    required:
+    - product_id
+    - quantity
+    - total_price
+    - user_id
+    type: object
+  enterprise-microservice-system_services_order-service_internal_model.Order:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      product_id:
+        type: string
+      quantity:
+        type: integer
+      status:
+        $ref: '#/definitions/enterprise-microservice-system_services_order-service_internal_model.OrderStatus'
+      total_price:
+        type: number
+      updated_at:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  enterprise-microservice-system_services_order-service_internal_model.OrderStatus:
+    enum:
+    - pending
+    - confirmed
+    - shipped
+    - delivered
+    - cancelled
+    type: string
+    x-enum-varnames:
+    - OrderStatusPending
+    - OrderStatusConfirmed
+    - OrderStatusShipped
+    - OrderStatusDelivered
+    - OrderStatusCancelled
+  enterprise-microservice-system_services_order-service_internal_model.OrderWithUser:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      product_id:
+        type: string
+      quantity:
+        type: integer
+      status:
+        $ref: '#/definitions/enterprise-microservice-system_services_order-service_internal_model.OrderStatus'
+      total_price:
+        type: number
+      updated_at:
+        type: string
+      user:
+        $ref: '#/definitions/enterprise-microservice-system_services_order-service_internal_model.User'
+      user_id:
+        type: integer
+    type: object
+  enterprise-microservice-system_services_order-service_internal_model.UpdateOrderRequest:
+    properties:
+      status:
+        allOf:
+        - $ref: '#/definitions/enterprise-microservice-system_services_order-service_internal_model.OrderStatus'
+        enum:
+        - pending
+        - confirmed
+        - shipped
+        - delivered
+        - cancelled
+    type: object
+  enterprise-microservice-system_services_order-service_internal_model.User:
+    properties:
+      active:
+        type: boolean
+      age:
+        type: integer
+      email:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  response.ErrorInfo:
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+    type: object
+  response.Meta:
+    properties:
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total_count:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  response.Response:
+    properties:
+      data: {}
+      error:
+        $ref: '#/definitions/response.ErrorInfo'
+      meta:
+        $ref: '#/definitions/response.Meta'
+      success:
+        type: boolean
+    type: object
+info:
+  contact: {}
+paths:
+  /orders:
+    get:
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: page_size
+        type: integer
+      - description: Filter by user ID
+        in: query
+        name: user_id
+        type: integer
+      - description: Filter by status
+        in: query
+        name: status
+        type: string
+      - description: Filter by product ID
+        in: query
+        name: product_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/enterprise-microservice-system_services_order-service_internal_model.Order'
+                  type: array
+              type: object
+      security:
+      - BearerAuth: []
+      summary: List orders
+      tags:
+      - orders
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Order data
+        in: body
+        name: order
+        required: true
+        schema:
+          $ref: '#/definitions/enterprise-microservice-system_services_order-service_internal_model.CreateOrderRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/enterprise-microservice-system_services_order-service_internal_model.Order'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Create a new order
+      tags:
+      - orders
+  /orders/{id}:
+    delete:
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Delete an order
+      tags:
+      - orders
+    get:
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/enterprise-microservice-system_services_order-service_internal_model.OrderWithUser'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get an order by ID
+      tags:
+      - orders
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Order update data
+        in: body
+        name: order
+        required: true
+        schema:
+          $ref: '#/definitions/enterprise-microservice-system_services_order-service_internal_model.UpdateOrderRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/enterprise-microservice-system_services_order-service_internal_model.Order'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Update an order
+      tags:
+      - orders
+swagger: "2.0"

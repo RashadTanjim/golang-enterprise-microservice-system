@@ -10,6 +10,23 @@ make docker-up
 # Wait for services to be ready (about 10 seconds)
 ```
 
+Get an access token and export it for the examples:
+```bash
+curl -X POST http://localhost:8081/api/v1/auth/token \
+  -H "Content-Type: application/json" \
+  -d '{
+    "client_id": "admin",
+    "client_secret": "admin123"
+  }'
+
+TOKEN="<paste access token here>"
+```
+
+All requests below require:
+```
+Authorization: Bearer $TOKEN
+```
+
 ## User Service Examples
 
 ### 1. Create Users
@@ -18,6 +35,7 @@ make docker-up
 # Create first user
 curl -X POST http://localhost:8081/api/v1/users \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
   -d '{
     "email": "alice@example.com",
     "name": "Alice Johnson",
@@ -27,6 +45,7 @@ curl -X POST http://localhost:8081/api/v1/users \
 # Create second user
 curl -X POST http://localhost:8081/api/v1/users \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
   -d '{
     "email": "bob@example.com",
     "name": "Bob Smith",
@@ -36,6 +55,7 @@ curl -X POST http://localhost:8081/api/v1/users \
 # Create third user
 curl -X POST http://localhost:8081/api/v1/users \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
   -d '{
     "email": "carol@example.com",
     "name": "Carol Williams",
@@ -46,23 +66,28 @@ curl -X POST http://localhost:8081/api/v1/users \
 ### 2. List All Users
 
 ```bash
-curl http://localhost:8081/api/v1/users
+curl http://localhost:8081/api/v1/users \
+  -H "Authorization: Bearer $TOKEN"
 
 # With pagination
-curl "http://localhost:8081/api/v1/users?page=1&page_size=2"
+curl "http://localhost:8081/api/v1/users?page=1&page_size=2" \
+  -H "Authorization: Bearer $TOKEN"
 
 # Search by name
-curl "http://localhost:8081/api/v1/users?search=alice"
+curl "http://localhost:8081/api/v1/users?search=alice" \
+  -H "Authorization: Bearer $TOKEN"
 
 # Filter by active status
-curl "http://localhost:8081/api/v1/users?active=true"
+curl "http://localhost:8081/api/v1/users?active=true" \
+  -H "Authorization: Bearer $TOKEN"
 ```
 
 ### 3. Get Specific User
 
 ```bash
 # Get user with ID 1
-curl http://localhost:8081/api/v1/users/1
+curl http://localhost:8081/api/v1/users/1 \
+  -H "Authorization: Bearer $TOKEN"
 ```
 
 ### 4. Update User
@@ -71,6 +96,7 @@ curl http://localhost:8081/api/v1/users/1
 # Update user name and age
 curl -X PUT http://localhost:8081/api/v1/users/1 \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
   -d '{
     "name": "Alice Cooper",
     "age": 29
@@ -79,6 +105,7 @@ curl -X PUT http://localhost:8081/api/v1/users/1 \
 # Deactivate user
 curl -X PUT http://localhost:8081/api/v1/users/1 \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
   -d '{
     "active": false
   }'
@@ -87,7 +114,8 @@ curl -X PUT http://localhost:8081/api/v1/users/1 \
 ### 5. Delete User
 
 ```bash
-curl -X DELETE http://localhost:8081/api/v1/users/3
+curl -X DELETE http://localhost:8081/api/v1/users/3 \
+  -H "Authorization: Bearer $TOKEN"
 ```
 
 ## Order Service Examples
@@ -98,6 +126,7 @@ curl -X DELETE http://localhost:8081/api/v1/users/3
 # Create order for user 1
 curl -X POST http://localhost:8082/api/v1/orders \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
   -d '{
     "user_id": 1,
     "product_id": "LAPTOP-001",
@@ -108,6 +137,7 @@ curl -X POST http://localhost:8082/api/v1/orders \
 # Create another order
 curl -X POST http://localhost:8082/api/v1/orders \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
   -d '{
     "user_id": 1,
     "product_id": "MOUSE-003",
@@ -118,6 +148,7 @@ curl -X POST http://localhost:8082/api/v1/orders \
 # Create order for user 2
 curl -X POST http://localhost:8082/api/v1/orders \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
   -d '{
     "user_id": 2,
     "product_id": "KEYBOARD-005",
@@ -132,26 +163,32 @@ curl -X POST http://localhost:8082/api/v1/orders \
 
 ```bash
 # List all orders
-curl http://localhost:8082/api/v1/orders
+curl http://localhost:8082/api/v1/orders \
+  -H "Authorization: Bearer $TOKEN"
 
 # Filter by user
-curl "http://localhost:8082/api/v1/orders?user_id=1"
+curl "http://localhost:8082/api/v1/orders?user_id=1" \
+  -H "Authorization: Bearer $TOKEN"
 
 # Filter by status
-curl "http://localhost:8082/api/v1/orders?status=pending"
+curl "http://localhost:8082/api/v1/orders?status=pending" \
+  -H "Authorization: Bearer $TOKEN"
 
 # Filter by product
-curl "http://localhost:8082/api/v1/orders?product_id=LAPTOP-001"
+curl "http://localhost:8082/api/v1/orders?product_id=LAPTOP-001" \
+  -H "Authorization: Bearer $TOKEN"
 
 # Pagination
-curl "http://localhost:8082/api/v1/orders?page=1&page_size=5"
+curl "http://localhost:8082/api/v1/orders?page=1&page_size=5" \
+  -H "Authorization: Bearer $TOKEN"
 ```
 
 ### 3. Get Specific Order
 
 ```bash
 # Get order with ID 1
-curl http://localhost:8082/api/v1/orders/1
+curl http://localhost:8082/api/v1/orders/1 \
+  -H "Authorization: Bearer $TOKEN"
 ```
 
 **Note**: The response includes user data fetched from the user service.
@@ -162,6 +199,7 @@ curl http://localhost:8082/api/v1/orders/1
 # Confirm order
 curl -X PUT http://localhost:8082/api/v1/orders/1 \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
   -d '{
     "status": "confirmed"
   }'
@@ -169,6 +207,7 @@ curl -X PUT http://localhost:8082/api/v1/orders/1 \
 # Ship order
 curl -X PUT http://localhost:8082/api/v1/orders/1 \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
   -d '{
     "status": "shipped"
   }'
@@ -176,6 +215,7 @@ curl -X PUT http://localhost:8082/api/v1/orders/1 \
 # Deliver order
 curl -X PUT http://localhost:8082/api/v1/orders/1 \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
   -d '{
     "status": "delivered"
   }'
@@ -183,6 +223,7 @@ curl -X PUT http://localhost:8082/api/v1/orders/1 \
 # Cancel order
 curl -X PUT http://localhost:8082/api/v1/orders/2 \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
   -d '{
     "status": "cancelled"
   }'
@@ -191,7 +232,8 @@ curl -X PUT http://localhost:8082/api/v1/orders/2 \
 ### 5. Delete Order
 
 ```bash
-curl -X DELETE http://localhost:8082/api/v1/orders/3
+curl -X DELETE http://localhost:8082/api/v1/orders/3 \
+  -H "Authorization: Bearer $TOKEN"
 ```
 
 ## Health & Monitoring

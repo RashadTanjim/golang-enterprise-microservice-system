@@ -1,14 +1,18 @@
 package api
 
 import (
+	"enterprise-microservice-system/common/auth"
 	"enterprise-microservice-system/common/logger"
 	"enterprise-microservice-system/common/metrics"
 	"enterprise-microservice-system/common/middleware"
+	orderdocs "enterprise-microservice-system/services/order-service/docs"
 	"enterprise-microservice-system/services/order-service/internal/handler"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 // Router sets up all routes for the order service
@@ -17,6 +21,7 @@ type Router struct {
 	logger      *logger.Logger
 	metrics     *metrics.Metrics
 	rateLimiter *middleware.RateLimiter
+	authConfig  auth.Config
 }
 
 // NewRouter creates a new router
@@ -25,12 +30,14 @@ func NewRouter(
 	logger *logger.Logger,
 	metrics *metrics.Metrics,
 	rateLimiter *middleware.RateLimiter,
+	authConfig auth.Config,
 ) *Router {
 	return &Router{
 		handler:     handler,
 		logger:      logger,
 		metrics:     metrics,
 		rateLimiter: rateLimiter,
+		authConfig:  authConfig,
 	}
 }
 
@@ -55,17 +62,22 @@ func (r *Router) Setup() *gin.Engine {
 	// Metrics endpoint (Prometheus)
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
+	orderdocs.SwaggerInfo.BasePath = "/api/v1"
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
 	// API v1 routes
 	v1 := router.Group("/api/v1")
+
+	protected := v1.Group("/")
+	protected.Use(middleware.AuthMiddleware(r.authConfig))
+
+	orders := protected.Group("/orders")
 	{
-		orders := v1.Group("/orders")
-		{
-			orders.POST("", r.handler.CreateOrder)
-			orders.GET("", r.handler.ListOrders)
-			orders.GET("/:id", r.handler.GetOrder)
-			orders.PUT("/:id", r.handler.UpdateOrder)
-			orders.DELETE("/:id", r.handler.DeleteOrder)
-		}
+		orders.POST("", middleware.RequireRoles("admin", "user"), r.handler.CreateOrder)
+		orders.GET("", middleware.RequireRoles("admin", "user"), r.handler.ListOrders)
+		orders.GET("/:id", middleware.RequireRoles("admin", "user"), r.handler.GetOrder)
+		orders.PUT("/:id", middleware.RequireRoles("admin"), r.handler.UpdateOrder)
+		orders.DELETE("/:id", middleware.RequireRoles("admin"), r.handler.DeleteOrder)
 	}
 
 	return router

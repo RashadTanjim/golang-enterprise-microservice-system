@@ -1,0 +1,264 @@
+{
+  "info": {
+    "name": "Enterprise Microservice System",
+    "description": "User + Order service API collection with JWT auth.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Issue Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url_user}}/api/v1/auth/token",
+              "host": ["{{base_url_user}}"],
+              "path": ["api", "v1", "auth", "token"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"client_id\": \"{{client_id}}\",\n  \"client_secret\": \"{{client_secret}}\",\n  \"roles\": [\"admin\"]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json && json.data && json.data.access_token) {",
+                  "  pm.environment.set('token', json.data.access_token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "User Service",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url_user}}/api/v1/users",
+              "host": ["{{base_url_user}}"],
+              "path": ["api", "v1", "users"]
+            }
+          }
+        },
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url_user}}/api/v1/users",
+              "host": ["{{base_url_user}}"],
+              "path": ["api", "v1", "users"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alice@example.com\",\n  \"name\": \"Alice Johnson\",\n  \"age\": 28\n}"
+            }
+          }
+        },
+        {
+          "name": "Get User",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url_user}}/api/v1/users/1",
+              "host": ["{{base_url_user}}"],
+              "path": ["api", "v1", "users", "1"]
+            }
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url_user}}/api/v1/users/1",
+              "host": ["{{base_url_user}}"],
+              "path": ["api", "v1", "users", "1"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alice Updated\",\n  \"age\": 29\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url_user}}/api/v1/users/1",
+              "host": ["{{base_url_user}}"],
+              "path": ["api", "v1", "users", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Order Service",
+      "item": [
+        {
+          "name": "List Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url_order}}/api/v1/orders",
+              "host": ["{{base_url_order}}"],
+              "path": ["api", "v1", "orders"]
+            }
+          }
+        },
+        {
+          "name": "Create Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url_order}}/api/v1/orders",
+              "host": ["{{base_url_order}}"],
+              "path": ["api", "v1", "orders"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": 1,\n  \"product_id\": \"LAPTOP-001\",\n  \"quantity\": 1,\n  \"total_price\": 1299.99\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Order",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url_order}}/api/v1/orders/1",
+              "host": ["{{base_url_order}}"],
+              "path": ["api", "v1", "orders", "1"]
+            }
+          }
+        },
+        {
+          "name": "Update Order",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url_order}}/api/v1/orders/1",
+              "host": ["{{base_url_order}}"],
+              "path": ["api", "v1", "orders", "1"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"confirmed\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Order",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url_order}}/api/v1/orders/1",
+              "host": ["{{base_url_order}}"],
+              "path": ["api", "v1", "orders", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health & Metrics",
+      "item": [
+        {
+          "name": "User Health",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url_user}}/health",
+              "host": ["{{base_url_user}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Order Health",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url_order}}/health",
+              "host": ["{{base_url_order}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "User Metrics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url_user}}/metrics",
+              "host": ["{{base_url_user}}"],
+              "path": ["metrics"]
+            }
+          }
+        },
+        {
+          "name": "Order Metrics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url_order}}/metrics",
+              "host": ["{{base_url_order}}"],
+              "path": ["metrics"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -16,6 +17,7 @@ type Config struct {
 	Log            LogConfig
 	UserService    UserServiceConfig
 	CircuitBreaker CircuitBreakerConfig
+	Auth           AuthConfig
 }
 
 // ServerConfig holds server configuration
@@ -50,6 +52,16 @@ type CircuitBreakerConfig struct {
 	Timeout     time.Duration
 }
 
+// AuthConfig holds authentication configuration
+type AuthConfig struct {
+	Secret         string
+	Issuer         string
+	Audience       string
+	TokenTTL       time.Duration
+	ServiceSubject string
+	ServiceRoles   []string
+}
+
 // Load loads configuration from environment variables
 func Load() (*Config, error) {
 	// Try to load .env file (optional in production)
@@ -75,6 +87,11 @@ func Load() (*Config, error) {
 		timeout = 30
 	}
 
+	tokenTTLMinutes, err := strconv.Atoi(getEnv("AUTH_TOKEN_TTL_MINUTES", "60"))
+	if err != nil {
+		tokenTTLMinutes = 60
+	}
+
 	config := &Config{
 		Server: ServerConfig{
 			Port:      getEnv("ORDER_SERVICE_PORT", "8082"),
@@ -98,6 +115,14 @@ func Load() (*Config, error) {
 			Interval:    time.Duration(interval) * time.Second,
 			Timeout:     time.Duration(timeout) * time.Second,
 		},
+		Auth: AuthConfig{
+			Secret:         getEnv("AUTH_JWT_SECRET", "change-me"),
+			Issuer:         getEnv("AUTH_JWT_ISSUER", "enterprise-microservice-system"),
+			Audience:       getEnv("AUTH_JWT_AUDIENCE", "enterprise-microservice-system"),
+			TokenTTL:       time.Duration(tokenTTLMinutes) * time.Minute,
+			ServiceSubject: getEnv("AUTH_SERVICE_SUBJECT", "order-service"),
+			ServiceRoles:   getEnvList("AUTH_SERVICE_ROLES", []string{"service"}),
+		},
 	}
 
 	return config, nil
@@ -116,4 +141,26 @@ func getEnv(key, defaultValue string) string {
 		return defaultValue
 	}
 	return value
+}
+
+func getEnvList(key string, defaultValues []string) []string {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValues
+	}
+
+	parts := strings.Split(value, ",")
+	result := make([]string, 0, len(parts))
+	for _, part := range parts {
+		trimmed := strings.TrimSpace(part)
+		if trimmed != "" {
+			result = append(result, trimmed)
+		}
+	}
+
+	if len(result) == 0 {
+		return defaultValues
+	}
+
+	return result
 }

@@ -16,16 +16,18 @@ type UserClient struct {
 	baseURL        string
 	client         *http.Client
 	circuitBreaker *circuitbreaker.CircuitBreaker
+	tokenProvider  func() (string, error)
 }
 
 // NewUserClient creates a new user service client
-func NewUserClient(baseURL string, cb *circuitbreaker.CircuitBreaker) *UserClient {
+func NewUserClient(baseURL string, cb *circuitbreaker.CircuitBreaker, tokenProvider func() (string, error)) *UserClient {
 	return &UserClient{
 		baseURL: baseURL,
 		client: &http.Client{
 			Timeout: 10 * time.Second,
 		},
 		circuitBreaker: cb,
+		tokenProvider:  tokenProvider,
 	}
 }
 
@@ -68,6 +70,13 @@ func (c *UserClient) doGetRequest(ctx context.Context, url string) (*model.User,
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
+	if c.tokenProvider != nil {
+		token, err := c.tokenProvider()
+		if err != nil {
+			return nil, errors.NewInternal("failed to generate service token", err)
+		}
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
 
 	resp, err := c.client.Do(req)
 	if err != nil {

@@ -51,10 +51,13 @@ This system follows a **microservice architecture** with clean separation of con
 | HTTP Framework | Gin |
 | ORM | GORM |
 | Database | PostgreSQL 16 |
+| Migrations | golang-migrate |
+| Authentication | JWT (golang-jwt/jwt) |
 | Logging | Zap (structured logging) |
 | Metrics | Prometheus |
 | Circuit Breaker | gobreaker |
 | Rate Limiting | golang.org/x/time/rate (token bucket) |
+| API Docs | Swagger (swaggo) |
 | Containerization | Docker, Docker Compose |
 | Hot Reload | Air |
 
@@ -62,7 +65,11 @@ This system follows a **microservice architecture** with clean separation of con
 
 ```
 enterprise-microservice-system/
+├── .github/                        # GitHub workflows
+│   └── workflows/
+│       └── ci.yml                  # CI: tests + link checks
 ├── common/                          # Shared libraries
+│   ├── auth/                       # JWT utilities
 │   ├── circuitbreaker/             # Circuit breaker implementation
 │   ├── errors/                     # Custom error types
 │   ├── logger/                     # Structured logging
@@ -77,7 +84,9 @@ enterprise-microservice-system/
 ├── services/
 │   ├── user-service/              # User management service
 │   │   ├── cmd/
-│   │   │   └── main.go           # Entry point
+│   │   │   ├── main.go           # Entry point
+│   │   │   └── migrate/          # Migration runner
+│   │   │       └── main.go
 │   │   ├── internal/
 │   │   │   ├── api/              # Route definitions
 │   │   │   ├── config/           # Configuration
@@ -85,12 +94,16 @@ enterprise-microservice-system/
 │   │   │   ├── model/            # Domain models
 │   │   │   ├── repository/       # Data access layer
 │   │   │   └── service/          # Business logic
+│   │   ├── migrations/           # SQL migrations
 │   │   ├── tests/                # Unit tests
 │   │   ├── Dockerfile            # Container definition
-│   │   └── .air.toml             # Hot reload config
+│   │   ├── .air.toml             # Hot reload config
+│   │   └── docs/                 # Swagger docs (generated)
 │   └── order-service/            # Order management service
 │       ├── cmd/
-│       │   └── main.go           # Entry point
+│       │   ├── main.go           # Entry point
+│       │   └── migrate/          # Migration runner
+│       │       └── main.go
 │       ├── internal/
 │       │   ├── api/              # Route definitions
 │       │   ├── client/           # Inter-service communication
@@ -99,11 +112,17 @@ enterprise-microservice-system/
 │       │   ├── model/            # Domain models
 │       │   ├── repository/       # Data access layer
 │       │   └── service/          # Business logic
+│       ├── migrations/           # SQL migrations
 │       ├── Dockerfile            # Container definition
-│       └── .air.toml             # Hot reload config
+│       ├── .air.toml             # Hot reload config
+│       └── docs/                 # Swagger docs (generated)
 ├── monitoring/
 │   └── prometheus.yml            # Prometheus configuration
+├── docs/                          # API tooling and docs assets
+│   ├── enterprise-microservice-system.postman_collection.json
+│   └── enterprise-microservice-system.postman_environment.json
 ├── docker-compose.yml            # Container orchestration
+├── .lychee.toml                   # Link checker configuration
 ├── Makefile                      # Build and run commands
 ├── go.mod                        # Go dependencies
 ├── .env.example                  # Environment variables template
@@ -127,39 +146,45 @@ enterprise-microservice-system/
 
 ### 2. Database Management
 - PostgreSQL with GORM ORM
-- Automatic migrations
+- Versioned migrations with golang-migrate
+- Embedded migration runner on service startup
 - Connection pooling
 - Transaction support
 - Separate databases per service
 
-### 3. Rate Limiting
+### 3. Authentication & Authorization
+- JWT-based authentication
+- Role-based access control (admin/user/service)
+- Service-to-service tokens for internal calls
+
+### 4. Rate Limiting
 - Token bucket algorithm implementation
 - Per-IP rate limiting
 - Configurable limits
 - Thread-safe using sync.Map
 
-### 4. Circuit Breaker
+### 5. Circuit Breaker
 - Protects inter-service calls
 - States: Closed, Half-Open, Open
 - Configurable failure threshold
 - Automatic recovery attempts
 - Graceful fallback responses
 
-### 5. Concurrency Features
+### 6. Concurrency Features
 - Goroutines for background tasks
 - Worker pool pattern
 - Mutex for thread-safe operations
 - Channel-based communication
 - Context-aware request handling
 
-### 6. Metrics & Observability
+### 7. Metrics & Observability
 - Prometheus-compatible metrics endpoint
 - Request count, latency, error rate tracking
 - Circuit breaker state monitoring
 - Health check endpoints
 - Structured JSON logging
 
-### 7. Middleware Stack
+### 8. Middleware Stack
 - CORS handling
 - Request ID generation
 - Panic recovery
@@ -167,7 +192,7 @@ enterprise-microservice-system/
 - Rate limiting
 - Metrics collection
 
-### 8. Developer Experience
+### 9. Developer Experience
 - Hot reload with Air
 - Comprehensive Makefile
 - Docker Compose for local development
@@ -212,6 +237,71 @@ curl http://localhost:8081/health
 curl http://localhost:8082/health
 ```
 
+5. Get an access token:
+```bash
+curl -X POST http://localhost:8081/api/v1/auth/token \
+  -H "Content-Type: application/json" \
+  -d '{
+    "client_id": "admin",
+    "client_secret": "admin123"
+  }'
+```
+
+Use the returned token in the `Authorization` header for all protected endpoints:
+```bash
+curl http://localhost:8081/api/v1/users \
+  -H "Authorization: Bearer <token>"
+```
+
+### Run & Test Endpoints
+
+Health checks:
+```bash
+curl http://localhost:8081/health
+curl http://localhost:8082/health
+```
+
+Issue a token:
+```bash
+curl -X POST http://localhost:8081/api/v1/auth/token \
+  -H "Content-Type: application/json" \
+  -d '{
+    "client_id": "admin",
+    "client_secret": "admin123",
+    "roles": ["admin"]
+  }'
+```
+
+User endpoints:
+```bash
+curl -H "Authorization: Bearer <token>" http://localhost:8081/api/v1/users
+curl -X POST http://localhost:8081/api/v1/users \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{"email":"user@example.com","name":"User One","age":30}'
+```
+
+Order endpoints:
+```bash
+curl -H "Authorization: Bearer <token>" http://localhost:8082/api/v1/orders
+curl -X POST http://localhost:8082/api/v1/orders \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{"user_id":1,"product_id":"PROD-1","quantity":1,"total_price":9.99}'
+```
+
+Metrics:
+```bash
+curl http://localhost:8081/metrics
+curl http://localhost:8082/metrics
+```
+
+Swagger UI:
+```
+http://localhost:8081/swagger/index.html
+http://localhost:8082/swagger/index.html
+```
+
 ### Local Development Setup
 
 1. Install dependencies:
@@ -229,7 +319,13 @@ make install-tools
 docker-compose up -d user-db order-db
 ```
 
-4. Run services locally:
+4. Run migrations (optional if you prefer manual control):
+```bash
+make migrate-user
+make migrate-order
+```
+
+5. Run services locally:
 
 In terminal 1:
 ```bash
@@ -292,9 +388,50 @@ make dev-order
 | CIRCUIT_BREAKER_INTERVAL | Failure counting interval (seconds) | 60 |
 | CIRCUIT_BREAKER_TIMEOUT | Open to half-open timeout (seconds) | 30 |
 
+#### Authentication
+| Variable | Description | Default |
+|----------|-------------|---------|
+| AUTH_JWT_SECRET | JWT signing secret | change-me |
+| AUTH_JWT_ISSUER | JWT issuer | enterprise-microservice-system |
+| AUTH_JWT_AUDIENCE | JWT audience | enterprise-microservice-system |
+| AUTH_TOKEN_TTL_MINUTES | Token TTL in minutes | 60 |
+| AUTH_CLIENT_ID | Token client id | admin |
+| AUTH_CLIENT_SECRET | Token client secret | admin123 |
+| AUTH_CLIENT_ROLES | Roles assigned to issued tokens (CSV) | admin |
+| AUTH_SERVICE_SUBJECT | Subject for service-to-service tokens | order-service |
+| AUTH_SERVICE_ROLES | Roles for service tokens (CSV) | service |
+
 ## API Documentation
 
+Swagger UI:
+- User Service: http://localhost:8081/swagger/index.html
+- Order Service: http://localhost:8082/swagger/index.html
+
+### Authentication
+
+#### Issue Token
+```bash
+POST /api/v1/auth/token
+Content-Type: application/json
+
+{
+  "client_id": "admin",
+  "client_secret": "admin123",
+  "roles": ["admin"]
+}
+```
+
+If `roles` is omitted, the token includes the roles defined in `AUTH_CLIENT_ROLES`.
+To issue a user-only token, include `"roles": ["user"]` and ensure `AUTH_CLIENT_ROLES` contains `user`.
+
+All API endpoints under `/api/v1` (except `/api/v1/auth/token`) require:
+```
+Authorization: Bearer <token>
+```
+
 ### User Service (Port 8081)
+
+All user endpoints require a valid JWT. Admin role is required for write operations.
 
 #### Create User
 ```bash
@@ -336,6 +473,8 @@ DELETE /api/v1/users/{id}
 ```
 
 ### Order Service (Port 8082)
+
+Order endpoints require a valid JWT. Admin or user roles can create and read orders; admin is required for updates and deletes.
 
 #### Create Order
 ```bash
@@ -415,6 +554,16 @@ make test-order
 make lint
 ```
 
+### GitHub Actions CI
+- Runs `make test` and link checks on every push and pull request.
+
+### Postman Collection
+- Import `docs/enterprise-microservice-system.postman_collection.json` and `docs/enterprise-microservice-system.postman_environment.json`.
+- Run “Auth → Issue Token” to populate the `token` environment variable before calling protected endpoints.
+### Swagger
+- Swagger UI is served at `/swagger/index.html` for each service.
+- Regenerate docs with `make swagger` after updating handler annotations.
+
 ## Development
 
 ### Makefile Commands
@@ -425,8 +574,12 @@ make build             # Build all services
 make run              # Run all services
 make run-user         # Run user service
 make run-order        # Run order service
+make migrate-user     # Run user database migrations
+make migrate-order    # Run order database migrations
 make test             # Run all tests
 make lint             # Run linter
+make link-check       # Check docs links
+make swagger          # Generate Swagger docs
 make docker-up        # Start Docker containers
 make docker-down      # Stop Docker containers
 make docker-clean     # Remove all Docker resources
@@ -473,7 +626,7 @@ docker build -t order-service:latest -f services/order-service/Dockerfile .
 1. **Security**
    - Use secrets management (HashiCorp Vault, AWS Secrets Manager)
    - Enable TLS/HTTPS
-   - Implement authentication and authorization
+   - Rotate JWT secrets regularly and scope tokens by role
    - Regular security audits
 
 2. **Database**
@@ -481,6 +634,7 @@ docker build -t order-service:latest -f services/order-service/Dockerfile .
    - Enable automatic backups
    - Configure read replicas for scaling
    - Implement connection pooling
+   - Run migrations as part of deploy or startup
 
 3. **Monitoring**
    - Deploy Prometheus and Grafana

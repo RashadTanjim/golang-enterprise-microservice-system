@@ -2,15 +2,16 @@ package main
 
 import (
 	"context"
+	"enterprise-microservice-system/common/auth"
 	"enterprise-microservice-system/common/logger"
 	"enterprise-microservice-system/common/metrics"
 	"enterprise-microservice-system/common/middleware"
 	"enterprise-microservice-system/services/user-service/internal/api"
 	"enterprise-microservice-system/services/user-service/internal/config"
 	"enterprise-microservice-system/services/user-service/internal/handler"
-	"enterprise-microservice-system/services/user-service/internal/model"
 	"enterprise-microservice-system/services/user-service/internal/repository"
 	"enterprise-microservice-system/services/user-service/internal/service"
+	"enterprise-microservice-system/services/user-service/migrations"
 	"fmt"
 	"net/http"
 	"os"
@@ -50,16 +51,29 @@ func main() {
 		log.Fatal("Failed to connect to database", zap.Error(err))
 	}
 
-	// Auto-migrate database schema
-	if err := db.AutoMigrate(&model.User{}); err != nil {
-		log.Fatal("Failed to migrate database", zap.Error(err))
+	// Run database migrations
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatal("Failed to access database connection", zap.Error(err))
 	}
-	log.Info("Database migration completed")
+
+	if err := migrations.Run(sqlDB); err != nil {
+		log.Fatal("Failed to run database migrations", zap.Error(err))
+	}
+	log.Info("Database migrations completed")
 
 	// Initialize dependencies
 	userRepo := repository.NewUserRepository(db)
 	userService := service.NewUserService(userRepo)
 	userHandler := handler.NewUserHandler(userService, log)
+
+	authConfig := auth.Config{
+		Secret:   cfg.Auth.Secret,
+		Issuer:   cfg.Auth.Issuer,
+		Audience: cfg.Auth.Audience,
+		TokenTTL: cfg.Auth.TokenTTL,
+	}
+	authHandler := handler.NewAuthHandler(log, authConfig, cfg.Auth.ClientID, cfg.Auth.ClientSecret, cfg.Auth.ClientRoles)
 
 	// Initialize metrics
 	metricsCollector := metrics.NewMetrics("user_service")
@@ -68,7 +82,7 @@ func main() {
 	rateLimiter := middleware.NewRateLimiter(cfg.Server.RateLimit, cfg.Server.RateLimit*2)
 
 	// Setup router
-	routerSetup := api.NewRouter(userHandler, log, metricsCollector, rateLimiter)
+	routerSetup := api.NewRouter(userHandler, authHandler, log, metricsCollector, rateLimiter, authConfig)
 	router := routerSetup.Setup()
 
 	// Create HTTP server
@@ -105,8 +119,7 @@ func main() {
 	}
 
 	// Close database connection
-	sqlDB, err := db.DB()
-	if err == nil {
+	if sqlDB != nil {
 		sqlDB.Close()
 	}
 

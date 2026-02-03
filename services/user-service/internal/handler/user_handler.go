@@ -31,6 +31,7 @@ func NewUserHandler(service service.UserService, logger *logger.Logger) *UserHan
 // @Tags users
 // @Accept json
 // @Produce json
+// @Security BearerAuth
 // @Param user body model.CreateUserRequest true "User data"
 // @Success 201 {object} response.Response{data=model.User}
 // @Failure 400 {object} response.Response
@@ -59,6 +60,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 // @Summary Get a user by ID
 // @Tags users
 // @Produce json
+// @Security BearerAuth
 // @Param id path int true "User ID"
 // @Success 200 {object} response.Response{data=model.User}
 // @Failure 404 {object} response.Response
@@ -86,6 +88,7 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 // @Tags users
 // @Accept json
 // @Produce json
+// @Security BearerAuth
 // @Param id path int true "User ID"
 // @Param user body model.UpdateUserRequest true "User update data"
 // @Success 200 {object} response.Response{data=model.User}
@@ -122,6 +125,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 // @Summary Delete a user
 // @Tags users
 // @Produce json
+// @Security BearerAuth
 // @Param id path int true "User ID"
 // @Success 200 {object} response.Response
 // @Failure 404 {object} response.Response
@@ -148,6 +152,7 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 // @Summary List users
 // @Tags users
 // @Produce json
+// @Security BearerAuth
 // @Param page query int false "Page number" default(1)
 // @Param page_size query int false "Page size" default(10)
 // @Param search query string false "Search term"

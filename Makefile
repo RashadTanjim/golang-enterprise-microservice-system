@@ -1,4 +1,4 @@
-.PHONY: help build run test lint docker-up docker-down clean migrate-user migrate-order
+.PHONY: help build run test lint link-check swagger docker-up docker-down clean migrate-user migrate-order
 
 help: ## Display this help screen
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -37,6 +37,17 @@ test-order: ## Run order service tests
 lint: ## Run linter (requires golangci-lint)
 	@echo "Running linter..."
 	@golangci-lint run ./... || echo "golangci-lint not installed. Run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin"
+
+link-check: ## Check docs links (requires lychee)
+	@echo "Running link check..."
+	@command -v lychee >/dev/null 2>&1 && lychee --config .lychee.toml README.md EXAMPLES.md || echo "lychee not installed. See https://github.com/lycheeverse/lychee"
+
+swagger: ## Generate Swagger docs (requires swag)
+	@echo "Generating Swagger docs..."
+	@SWAG=$$(command -v swag || command -v $$(go env GOPATH)/bin/swag); \
+	if [ -z "$$SWAG" ]; then echo "swag not installed. Run: go install github.com/swaggo/swag/cmd/swag@v1.16.4"; exit 1; fi; \
+	(cd services/user-service && $$SWAG init -g cmd/main.go -o docs --parseDependency --parseInternal); \
+	(cd services/order-service && $$SWAG init -g cmd/main.go -o docs --parseDependency --parseInternal)
 
 docker-up: ## Start all services with docker-compose
 	@echo "Starting Docker containers..."

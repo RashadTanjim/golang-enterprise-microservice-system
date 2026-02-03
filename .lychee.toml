@@ -1,0 +1,14 @@
+exclude = [
+  "^http://localhost(:\\d+)?",
+  "^http://127.0.0.1(:\\d+)?",
+  "^http://user-service:8081",
+  "^http://order-service:8082",
+  "^http://localhost:9090"
+]
+
+exclude_path = [
+  ".git",
+  "**/vendor"
+]
+
+accept = ["200", "204", "301", "302", "403", "429"]

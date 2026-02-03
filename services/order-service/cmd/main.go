@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"enterprise-microservice-system/common/auth"
 	"enterprise-microservice-system/common/circuitbreaker"
 	"enterprise-microservice-system/common/logger"
 	"enterprise-microservice-system/common/metrics"
@@ -10,9 +11,9 @@ import (
 	"enterprise-microservice-system/services/order-service/internal/client"
 	"enterprise-microservice-system/services/order-service/internal/config"
 	"enterprise-microservice-system/services/order-service/internal/handler"
-	"enterprise-microservice-system/services/order-service/internal/model"
 	"enterprise-microservice-system/services/order-service/internal/repository"
 	"enterprise-microservice-system/services/order-service/internal/service"
+	"enterprise-microservice-system/services/order-service/migrations"
 	"fmt"
 	"net/http"
 	"os"
@@ -52,11 +53,16 @@ func main() {
 		log.Fatal("Failed to connect to database", zap.Error(err))
 	}
 
-	// Auto-migrate database schema
-	if err := db.AutoMigrate(&model.Order{}); err != nil {
-		log.Fatal("Failed to migrate database", zap.Error(err))
+	// Run database migrations
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatal("Failed to access database connection", zap.Error(err))
 	}
-	log.Info("Database migration completed")
+
+	if err := migrations.Run(sqlDB); err != nil {
+		log.Fatal("Failed to run database migrations", zap.Error(err))
+	}
+	log.Info("Database migrations completed")
 
 	// Initialize circuit breaker for user service
 	cbConfig := circuitbreaker.Config{
@@ -71,8 +77,23 @@ func main() {
 		zap.Duration("timeout", cbConfig.Timeout),
 	)
 
+	authConfig := auth.Config{
+		Secret:   cfg.Auth.Secret,
+		Issuer:   cfg.Auth.Issuer,
+		Audience: cfg.Auth.Audience,
+		TokenTTL: cfg.Auth.TokenTTL,
+	}
+
+	tokenProvider := func() (string, error) {
+		return auth.GenerateToken(authConfig, cfg.Auth.ServiceSubject, cfg.Auth.ServiceRoles)
+	}
+
+	if _, err := tokenProvider(); err != nil {
+		log.Fatal("Failed to initialize service token provider", zap.Error(err))
+	}
+
 	// Initialize user service client
-	userClient := client.NewUserClient(cfg.UserService.URL, userServiceCB)
+	userClient := client.NewUserClient(cfg.UserService.URL, userServiceCB, tokenProvider)
 
 	// Initialize dependencies
 	orderRepo := repository.NewOrderRepository(db)
@@ -89,7 +110,7 @@ func main() {
 	go updateCircuitBreakerMetrics(userClient, metricsCollector, log)
 
 	// Setup router
-	routerSetup := api.NewRouter(orderHandler, log, metricsCollector, rateLimiter)
+	routerSetup := api.NewRouter(orderHandler, log, metricsCollector, rateLimiter, authConfig)
 	router := routerSetup.Setup()
 
 	// Create HTTP server
@@ -126,8 +147,7 @@ func main() {
 	}
 
 	// Close database connection
-	sqlDB, err := db.DB()
-	if err == nil {
+	if sqlDB != nil {
 		sqlDB.Close()
 	}
 

@@ -56,6 +56,13 @@ services:
       - USER_SERVICE_DB_NAME=userdb
       - USER_SERVICE_LOG_LEVEL=info
       - USER_SERVICE_RATE_LIMIT=100
+      - AUTH_JWT_SECRET=change-me
+      - AUTH_JWT_ISSUER=enterprise-microservice-system
+      - AUTH_JWT_AUDIENCE=enterprise-microservice-system
+      - AUTH_TOKEN_TTL_MINUTES=60
+      - AUTH_CLIENT_ID=admin
+      - AUTH_CLIENT_SECRET=admin123
+      - AUTH_CLIENT_ROLES=admin
     ports:
       - "8081:8081"
     depends_on:
@@ -89,6 +96,12 @@ services:
       - CIRCUIT_BREAKER_MAX_REQUESTS=3
       - CIRCUIT_BREAKER_INTERVAL=60
       - CIRCUIT_BREAKER_TIMEOUT=30
+      - AUTH_JWT_SECRET=change-me
+      - AUTH_JWT_ISSUER=enterprise-microservice-system
+      - AUTH_JWT_AUDIENCE=enterprise-microservice-system
+      - AUTH_TOKEN_TTL_MINUTES=60
+      - AUTH_SERVICE_SUBJECT=order-service
+      - AUTH_SERVICE_ROLES=service
     ports:
       - "8082:8082"
     depends_on:
