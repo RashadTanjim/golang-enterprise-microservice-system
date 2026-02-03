@@ -63,7 +63,7 @@ Changes:
 - document commit message format and examples
 
 Impacted Modules:
-- docs/readme.md
+- docs/COMMIT_STANDARDS.md
 
 Testing:
 - N/A
