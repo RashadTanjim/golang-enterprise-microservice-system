@@ -84,13 +84,17 @@ func main() {
 		TokenTTL: cfg.Auth.TokenTTL,
 	}
 
-	tokenProvider := func() (string, error) {
-		return auth.GenerateToken(authConfig, cfg.Auth.ServiceSubject, cfg.Auth.ServiceRoles)
-	}
+	// Initialize cached token provider with automatic renewal 5 minutes before expiry
+	cachedTokenProvider := auth.NewCachedTokenProvider(authConfig, cfg.Auth.ServiceSubject, cfg.Auth.ServiceRoles, 5*time.Minute)
+	tokenProvider := cachedTokenProvider.GetToken
 
 	if _, err := tokenProvider(); err != nil {
 		log.Fatal("Failed to initialize service token provider", zap.Error(err))
 	}
+	log.Info("Service token provider initialized with caching",
+		zap.Duration("token_ttl", cfg.Auth.TokenTTL),
+		zap.Duration("renewal_threshold", 5*time.Minute),
+	)
 
 	// Initialize user service client
 	userClient := client.NewUserClient(cfg.UserService.URL, userServiceCB, tokenProvider)
