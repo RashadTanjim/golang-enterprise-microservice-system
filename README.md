@@ -18,21 +18,25 @@ A production-ready, enterprise-grade microservice system built with Go, featurin
 
 ## Architecture Overview
 
-This system follows a **microservice architecture** with clean separation of concerns:
+This system follows a **microservice architecture** with clean separation of concerns. A Vue.js portal is served through an Nginx gateway that also routes API traffic to backend services:
 
 ```
-┌─────────────────┐         ┌─────────────────┐
-│   User Service  │         │  Order Service  │
-│   Port: 8081    │◄────────┤   Port: 8082    │
-└────────┬────────┘         └────────┬────────┘
-         │                           │
-    ┌────▼────┐                 ┌────▼────┐
-    │ User DB │                 │ Order DB│
-    └─────────┘                 └─────────┘
-         │                           │
-    ┌────▼───────────────────────────▼────┐
-    │         Prometheus Metrics          │
-    └─────────────────────────────────────┘
+┌───────────────────────┐
+│ Vue Portal + Nginx    │  Port: 8080
+└───────────┬───────────┘
+            │
+   ┌────────▼────────┐         ┌────────▼────────┐
+   │   User Service  │         │  Order Service  │
+   │   Port: 8081    │◄────────┤   Port: 8082    │
+   └────────┬────────┘         └────────┬────────┘
+            │                           │
+       ┌────▼────┐                 ┌────▼────┐
+       │ User DB │                 │ Order DB│
+       └─────────┘                 └─────────┘
+            │                           │
+       ┌────▼───────────────────────────▼────┐
+       │         Prometheus Metrics          │
+       └─────────────────────────────────────┘
 ```
 
 ![HLD](docs/hld-diagram.svg)
@@ -60,6 +64,8 @@ This system follows a **microservice architecture** with clean separation of con
 | Circuit Breaker | gobreaker |
 | Rate Limiting | golang.org/x/time/rate (token bucket) |
 | API Docs | Swagger (swaggo) |
+| Frontend | Vue 3 + Vite |
+| Gateway | Nginx |
 | Containerization | Docker, Docker Compose |
 | Hot Reload | Air |
 
@@ -126,6 +132,10 @@ enterprise-microservice-system/
 │   └── collections/
 │       ├── enterprise-microservice-system.postman_collection.json
 │       └── enterprise-microservice-system.postman_environment.json
+├── frontend/                       # Vue.js portal (SPA)
+│   ├── src/
+│   ├── Dockerfile
+│   └── nginx.conf
 ├── docker-compose.yml            # Container orchestration
 ├── .lychee.toml                   # Link checker configuration
 ├── Makefile                      # Build and run commands
@@ -162,34 +172,39 @@ enterprise-microservice-system/
 - Role-based access control (admin/user/service)
 - Service-to-service tokens for internal calls
 
-### 4. Rate Limiting
+### 4. Portal & Gateway
+- Vue.js enterprise portal for operations and observability
+- Nginx gateway serving the SPA and routing API traffic
+- Unified access to `/api`, `/health`, `/metrics`, and `/swagger`
+
+### 5. Rate Limiting
 - Token bucket algorithm implementation
 - Per-IP rate limiting
 - Configurable limits
 - Thread-safe using sync.Map
 
-### 5. Circuit Breaker
+### 6. Circuit Breaker
 - Protects inter-service calls
 - States: Closed, Half-Open, Open
 - Configurable failure threshold
 - Automatic recovery attempts
 - Graceful fallback responses
 
-### 6. Concurrency Features
+### 7. Concurrency Features
 - Goroutines for background tasks
 - Worker pool pattern
 - Mutex for thread-safe operations
 - Channel-based communication
 - Context-aware request handling
 
-### 7. Metrics & Observability
+### 8. Metrics & Observability
 - Prometheus-compatible metrics endpoint
 - Request count, latency, error rate tracking
 - Circuit breaker state monitoring
 - Health check endpoints
 - Structured JSON logging
 
-### 8. Middleware Stack
+### 9. Middleware Stack
 - CORS handling
 - Request ID generation
 - Panic recovery
@@ -197,7 +212,7 @@ enterprise-microservice-system/
 - Rate limiting
 - Metrics collection
 
-### 9. Developer Experience
+### 10. Developer Experience
 - Hot reload with Air
 - Comprehensive Makefile
 - Docker Compose for local development
@@ -233,6 +248,7 @@ make docker-up
 This will start:
 - User Service (http://localhost:8081)
 - Order Service (http://localhost:8082)
+- Web Portal + Gateway (http://localhost:8080)
 - PostgreSQL databases
 - Prometheus (http://localhost:9090)
 
@@ -240,11 +256,18 @@ This will start:
 ```bash
 curl http://localhost:8081/health
 curl http://localhost:8082/health
+curl http://localhost:8080/health/user
+curl http://localhost:8080/health/order
 ```
 
-5. Get an access token:
+5. Open the portal:
+```
+http://localhost:8080
+```
+
+6. Get an access token:
 ```bash
-curl -X POST http://localhost:8081/api/v1/auth/token \
+curl -X POST http://localhost:8080/api/v1/auth/token \
   -H "Content-Type: application/json" \
   -d '{
     "client_id": "admin",
@@ -260,15 +283,15 @@ curl http://localhost:8081/api/v1/users \
 
 ### Run & Test Endpoints
 
-Health checks:
+Health checks (via gateway):
 ```bash
-curl http://localhost:8081/health
-curl http://localhost:8082/health
+curl http://localhost:8080/health/user
+curl http://localhost:8080/health/order
 ```
 
-Issue a token:
+Issue a token (via gateway):
 ```bash
-curl -X POST http://localhost:8081/api/v1/auth/token \
+curl -X POST http://localhost:8080/api/v1/auth/token \
   -H "Content-Type: application/json" \
   -d '{
     "client_id": "admin",
@@ -277,34 +300,34 @@ curl -X POST http://localhost:8081/api/v1/auth/token \
   }'
 ```
 
-User endpoints:
+User endpoints (via gateway):
 ```bash
-curl -H "Authorization: Bearer <token>" http://localhost:8081/api/v1/users
-curl -X POST http://localhost:8081/api/v1/users \
+curl -H "Authorization: Bearer <token>" http://localhost:8080/api/v1/users
+curl -X POST http://localhost:8080/api/v1/users \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token>" \
   -d '{"email":"user@example.com","name":"User One","age":30}'
 ```
 
-Order endpoints:
+Order endpoints (via gateway):
 ```bash
-curl -H "Authorization: Bearer <token>" http://localhost:8082/api/v1/orders
-curl -X POST http://localhost:8082/api/v1/orders \
+curl -H "Authorization: Bearer <token>" http://localhost:8080/api/v1/orders
+curl -X POST http://localhost:8080/api/v1/orders \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token>" \
   -d '{"user_id":1,"product_id":"PROD-1","quantity":1,"total_price":9.99}'
 ```
 
-Metrics:
+Metrics (via gateway):
 ```bash
-curl http://localhost:8081/metrics
-curl http://localhost:8082/metrics
+curl http://localhost:8080/metrics/user
+curl http://localhost:8080/metrics/order
 ```
 
-Swagger UI:
+Swagger UI (via gateway):
 ```
-http://localhost:8081/swagger/index.html
-http://localhost:8082/swagger/index.html
+http://localhost:8080/swagger/user/
+http://localhost:8080/swagger/order/
 ```
 
 ### Local Development Setup
@@ -346,6 +369,16 @@ Or run both concurrently:
 ```bash
 make run
 ```
+
+### Frontend Development
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The portal will be available at `http://localhost:5173` (dev) or `http://localhost:8080` (Docker + gateway).
 
 ### Hot Reload Development
 
@@ -409,8 +442,8 @@ make dev-order
 ## API Documentation
 
 Swagger UI:
-- User Service: http://localhost:8081/swagger/index.html
-- Order Service: http://localhost:8082/swagger/index.html
+- Via gateway: http://localhost:8080/swagger/user/ and http://localhost:8080/swagger/order/
+- Direct: http://localhost:8081/swagger/index.html and http://localhost:8082/swagger/index.html
 
 ### Authentication
 
@@ -561,6 +594,7 @@ make lint
 
 ### GitHub Actions CI
 - Runs `make test` and link checks on every push and pull request.
+- Runs frontend unit tests and build.
 
 ### Postman Collection
 - Import `docs/collections/enterprise-microservice-system.postman_collection.json` and `docs/collections/enterprise-microservice-system.postman_environment.json`.
@@ -589,6 +623,9 @@ make test             # Run all tests
 make lint             # Run linter
 make link-check       # Check docs links
 make swagger          # Generate Swagger docs
+make frontend-install # Install frontend dependencies
+make frontend-test    # Run frontend tests
+make frontend-build   # Build frontend assets
 make docker-up        # Start Docker containers
 make docker-down      # Stop Docker containers
 make docker-clean     # Remove all Docker resources

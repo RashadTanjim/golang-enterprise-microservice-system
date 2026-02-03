@@ -1,4 +1,4 @@
-.PHONY: help build run test lint link-check swagger docker-up docker-down clean migrate-user migrate-order
+.PHONY: help build run test lint link-check swagger frontend-install frontend-test frontend-build docker-up docker-down clean migrate-user migrate-order
 
 help: ## Display this help screen
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -48,6 +48,15 @@ swagger: ## Generate Swagger docs (requires swag)
 	if [ -z "$$SWAG" ]; then echo "swag not installed. Run: go install github.com/swaggo/swag/cmd/swag@v1.16.4"; exit 1; fi; \
 	(cd services/user-service && $$SWAG init -g cmd/main.go -o docs --parseDependency --parseInternal); \
 	(cd services/order-service && $$SWAG init -g cmd/main.go -o docs --parseDependency --parseInternal)
+
+frontend-install: ## Install frontend dependencies
+	@cd frontend && npm install
+
+frontend-test: ## Run frontend tests
+	@cd frontend && npm test
+
+frontend-build: ## Build frontend assets
+	@cd frontend && npm run build
 
 docker-up: ## Start all services with docker-compose
 	@echo "Starting Docker containers..."

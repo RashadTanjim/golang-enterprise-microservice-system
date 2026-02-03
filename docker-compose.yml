@@ -133,6 +133,22 @@ services:
     networks:
       - microservices
 
+  # Web Portal + Gateway
+  web-portal:
+    build:
+      context: ./frontend
+    container_name: web-portal
+    ports:
+      - "8080:80"
+    depends_on:
+      user-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - microservices
+
 volumes:
   user_db_data:
   order_db_data:

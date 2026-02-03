@@ -28,14 +28,24 @@ This system is a production-ready microservice architecture built with Go. It co
   - Calls User Service to validate user existence and status.
   - Uses circuit breaker for resilience.
 
-### 4.2 Shared Libraries (`common/`)
+### 4.2 Frontend Portal
+- **Vue.js Portal** (port 8080 via gateway)
+  - Enterprise UI for operations, observability, and documentation.
+  - Connects through the Nginx gateway for API routing.
+
+### 4.3 Gateway
+- **Nginx Gateway**
+  - Serves the Vue SPA and routes API traffic to backend services.
+  - Provides consolidated paths for `/api`, `/health`, `/metrics`, and `/swagger`.
+
+### 4.4 Shared Libraries (`common/`)
 - **auth**: JWT token generation and parsing.
 - **middleware**: CORS, request ID, recovery, logging, metrics, rate limiting, JWT auth.
 - **logger**: Structured logging with Zap.
 - **metrics**: Prometheus metrics.
 - **errors/response**: Standard error types and API responses.
 
-### 4.3 Data Stores
+### 4.5 Data Stores
 - **User DB**: PostgreSQL (userdb)
 - **Order DB**: PostgreSQL (orderdb)
 
@@ -69,8 +79,8 @@ Each service owns its database (database-per-service).
   - `make migrate-order`
 
 ## 8) Observability
-- **Health checks**: `/health`
-- **Metrics**: `/metrics` (Prometheus format)
+- **Health checks**: `/health/user`, `/health/order` via gateway.
+- **Metrics**: `/metrics/user`, `/metrics/order` (Prometheus format).
 - **Structured logs**: Zap-based JSON logs with request IDs.
 
 ## 9) CI/CD
@@ -85,11 +95,11 @@ Each service owns its database (database-per-service).
 
 ## 11) API Docs
 - **Swagger UI** per service:
-  - `http://localhost:8081/swagger/index.html`
-  - `http://localhost:8082/swagger/index.html`
+  - Gateway: `http://localhost:8080/swagger/user/`, `http://localhost:8080/swagger/order/`
+  - Direct: `http://localhost:8081/swagger/index.html`, `http://localhost:8082/swagger/index.html`
 
 ## 12) Risks and Future Enhancements
-- Add API gateway (Kong/Traefik) for centralized auth and routing.
+- Harden gateway with WAF and rate limiting policies.
 - Add distributed tracing (Jaeger/Zipkin).
 - Add caching layer (Redis) for read-heavy operations.
 - Expand CI with security scanning and linting.
