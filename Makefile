@@ -8,6 +8,8 @@ build: ## Build all services
 	@cd services/user-service && go build -o ../../bin/user-service ./cmd/main.go
 	@echo "Building order-service..."
 	@cd services/order-service && go build -o ../../bin/order-service ./cmd/main.go
+	@echo "Building repository-service..."
+	@cd services/repository-service && go build -o ../../bin/repository-service ./cmd/main.go
 	@echo "Build complete!"
 
 run-user: ## Run user service
@@ -16,9 +18,12 @@ run-user: ## Run user service
 run-order: ## Run order service
 	@cd services/order-service && go run ./cmd/main.go
 
+run-repository: ## Run repository service
+	@cd services/repository-service && go run ./cmd/main.go
+
 run: ## Run all services concurrently
 	@echo "Starting all services..."
-	@make -j2 run-user run-order
+	@make -j3 run-user run-order run-repository
 
 test: ## Run all tests
 	@echo "Running tests..."
@@ -33,6 +38,10 @@ test-user: ## Run user service tests
 test-order: ## Run order service tests
 	@echo "Testing order-service..."
 	@cd services/order-service && go test -v -race ./...
+
+test-repository: ## Run repository service tests
+	@echo "Testing repository-service..."
+	@cd services/repository-service && go test -v -race ./...
 
 lint: ## Run linter (requires golangci-lint)
 	@echo "Running linter..."
@@ -86,6 +95,9 @@ dev-user: ## Run user service with hot reload (requires air)
 
 dev-order: ## Run order service with hot reload (requires air)
 	@cd services/order-service && air
+
+dev-repository: ## Run repository service with hot reload (requires air)
+	@cd services/repository-service && air
 
 format: ## Format code
 	@echo "Formatting code..."

@@ -41,6 +41,26 @@ services:
     networks:
       - microservices
 
+  # PostgreSQL for Repository Service
+  repository-db:
+    image: postgres:16-alpine
+    container_name: repository-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: repositorydb
+    ports:
+      - "5434:5432"
+    volumes:
+      - repository_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - microservices
+
   # User Service
   user-service:
     build:
@@ -105,6 +125,35 @@ services:
       timeout: 10s
       retries: 3
 
+  # Repository Service
+  repository-service:
+    build:
+      context: .
+      dockerfile: services/repository-service/Dockerfile
+    container_name: repository-service
+    environment:
+      - REPOSITORY_SERVICE_PORT=8083
+      - REPOSITORY_SERVICE_DB_HOST=repository-db
+      - REPOSITORY_SERVICE_DB_PORT=5432
+      - REPOSITORY_SERVICE_DB_USER=postgres
+      - REPOSITORY_SERVICE_DB_PASSWORD=postgres
+      - REPOSITORY_SERVICE_DB_NAME=repositorydb
+      - REPOSITORY_SERVICE_LOG_LEVEL=info
+      - REPOSITORY_SERVICE_RATE_LIMIT=100
+    ports:
+      - "8083:8083"
+    depends_on:
+      repository-db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - microservices
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8083/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   # Prometheus (optional - for metrics collection)
   prometheus:
     image: prom/prometheus:latest
@@ -123,6 +172,7 @@ services:
 volumes:
   user_db_data:
   order_db_data:
+  repository_db_data:
   prometheus_data:
 
 networks:
