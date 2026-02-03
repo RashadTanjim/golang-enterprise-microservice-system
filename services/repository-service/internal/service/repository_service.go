@@ -16,10 +16,10 @@ import (
 
 // RepositoryService defines the business logic interface for repositories
 type RepositoryService interface {
-	CreateRepository(ctx context.Context, req *model.CreateRepositoryRequest) (*model.Repository, error)
+	CreateRepository(ctx context.Context, req *model.CreateRepositoryRequest, actor string) (*model.Repository, error)
 	GetRepository(ctx context.Context, id uint) (*model.Repository, error)
-	UpdateRepository(ctx context.Context, id uint, req *model.UpdateRepositoryRequest) (*model.Repository, error)
-	DeleteRepository(ctx context.Context, id uint) error
+	UpdateRepository(ctx context.Context, id uint, req *model.UpdateRepositoryRequest, actor string) (*model.Repository, error)
+	DeleteRepository(ctx context.Context, id uint, actor string) error
 	ListRepositories(ctx context.Context, query *model.ListRepositoriesQuery) ([]*model.Repository, int64, error)
 }
 
@@ -38,7 +38,7 @@ func NewRepositoryService(repo repository.RepositoryRepository, cacheClient *cac
 }
 
 // CreateRepository creates a new repository
-func (s *repositoryService) CreateRepository(ctx context.Context, req *model.CreateRepositoryRequest) (*model.Repository, error) {
+func (s *repositoryService) CreateRepository(ctx context.Context, req *model.CreateRepositoryRequest, actor string) (*model.Repository, error) {
 	// Check if repository name already exists
 	existingRepo, err := s.repo.FindByName(ctx, req.Name)
 	if err != nil && err != gorm.ErrRecordNotFound {
@@ -61,8 +61,14 @@ func (s *repositoryService) CreateRepository(ctx context.Context, req *model.Cre
 		OwnerID:     req.OwnerID,
 		Visibility:  visibility,
 		URL:         req.URL,
-		Active:      true,
+		Status:      model.RepositoryStatusActive,
 	}
+
+	if actor == "" {
+		actor = "system"
+	}
+	repo.CreatedBy = actor
+	repo.UpdatedBy = actor
 
 	if err := s.repo.Create(ctx, repo); err != nil {
 		return nil, errors.NewInternal("failed to create repository", err)
@@ -91,7 +97,7 @@ func (s *repositoryService) GetRepository(ctx context.Context, id uint) (*model.
 }
 
 // UpdateRepository updates a repository
-func (s *repositoryService) UpdateRepository(ctx context.Context, id uint, req *model.UpdateRepositoryRequest) (*model.Repository, error) {
+func (s *repositoryService) UpdateRepository(ctx context.Context, id uint, req *model.UpdateRepositoryRequest, actor string) (*model.Repository, error) {
 	// Get existing repository
 	repo, err := s.repo.FindByID(ctx, id)
 	if err != nil {
@@ -123,9 +129,13 @@ func (s *repositoryService) UpdateRepository(ctx context.Context, id uint, req *
 	if req.URL != nil {
 		repo.URL = *req.URL
 	}
-	if req.Active != nil {
-		repo.Active = *req.Active
+	if req.Status != nil {
+		repo.Status = *req.Status
 	}
+	if actor == "" {
+		actor = "system"
+	}
+	repo.UpdatedBy = actor
 
 	// Save updates
 	if err := s.repo.Update(ctx, repo); err != nil {
@@ -138,7 +148,7 @@ func (s *repositoryService) UpdateRepository(ctx context.Context, id uint, req *
 }
 
 // DeleteRepository deletes a repository
-func (s *repositoryService) DeleteRepository(ctx context.Context, id uint) error {
+func (s *repositoryService) DeleteRepository(ctx context.Context, id uint, actor string) error {
 	// Check if repository exists
 	_, err := s.repo.FindByID(ctx, id)
 	if err != nil {
@@ -148,8 +158,12 @@ func (s *repositoryService) DeleteRepository(ctx context.Context, id uint) error
 		return errors.NewInternal("failed to get repository", err)
 	}
 
-	// Delete repository
-	if err := s.repo.Delete(ctx, id); err != nil {
+	if actor == "" {
+		actor = "system"
+	}
+
+	// Delete repository (status-based soft delete)
+	if err := s.repo.Delete(ctx, id, actor); err != nil {
 		return errors.NewInternal("failed to delete repository", err)
 	}
 
@@ -249,13 +263,9 @@ func (s *repositoryService) repositoryListCacheKey(query *model.ListRepositories
 		visibility = "all"
 	}
 
-	active := "any"
-	if query.Active != nil {
-		if *query.Active {
-			active = "true"
-		} else {
-			active = "false"
-		}
+	status := "any"
+	if query.Status != nil {
+		status = *query.Status
 	}
 
 	owner := "any"
@@ -264,12 +274,12 @@ func (s *repositoryService) repositoryListCacheKey(query *model.ListRepositories
 	}
 
 	return fmt.Sprintf(
-		"repositories:list:p%d:ps%d:search:%s:owner:%s:visibility:%s:active:%s",
+		"repositories:list:p%d:ps%d:search:%s:owner:%s:visibility:%s:status:%s",
 		query.Page,
 		query.PageSize,
 		search,
 		owner,
 		visibility,
-		active,
+		status,
 	)
 }

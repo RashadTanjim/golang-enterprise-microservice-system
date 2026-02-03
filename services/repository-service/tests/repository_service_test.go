@@ -42,8 +42,8 @@ func (m *MockRepositoryRepository) Update(ctx context.Context, repo *model.Repos
 	return args.Error(0)
 }
 
-func (m *MockRepositoryRepository) Delete(ctx context.Context, id uint) error {
-	args := m.Called(ctx, id)
+func (m *MockRepositoryRepository) Delete(ctx context.Context, id uint, updatedBy string) error {
+	args := m.Called(ctx, id, updatedBy)
 	return args.Error(0)
 }
 
@@ -70,7 +70,7 @@ func TestCreateRepository_Success(t *testing.T) {
 	mockRepo.On("FindByName", mock.Anything, req.Name).Return(nil, gorm.ErrRecordNotFound)
 	mockRepo.On("Create", mock.Anything, mock.AnythingOfType("*model.Repository")).Return(nil)
 
-	repo, err := service.CreateRepository(context.Background(), req)
+	repo, err := service.CreateRepository(context.Background(), req, "tester")
 
 	assert.NoError(t, err)
 	assert.NotNil(t, repo)
@@ -78,6 +78,7 @@ func TestCreateRepository_Success(t *testing.T) {
 	assert.Equal(t, req.Description, repo.Description)
 	assert.Equal(t, req.OwnerID, repo.OwnerID)
 	assert.Equal(t, req.Visibility, repo.Visibility)
+	assert.Equal(t, model.RepositoryStatusActive, repo.Status)
 	mockRepo.AssertExpectations(t)
 }
 
@@ -98,7 +99,7 @@ func TestCreateRepository_DuplicateName(t *testing.T) {
 
 	mockRepo.On("FindByName", mock.Anything, req.Name).Return(existingRepo, nil)
 
-	repo, err := service.CreateRepository(context.Background(), req)
+	repo, err := service.CreateRepository(context.Background(), req, "tester")
 
 	assert.Error(t, err)
 	assert.Nil(t, repo)
@@ -124,7 +125,7 @@ func TestUpdateRepository_Success(t *testing.T) {
 	mockRepo.On("FindByID", mock.Anything, uint(1)).Return(existingRepo, nil)
 	mockRepo.On("Update", mock.Anything, mock.AnythingOfType("*model.Repository")).Return(nil)
 
-	repo, err := service.UpdateRepository(context.Background(), 1, req)
+	repo, err := service.UpdateRepository(context.Background(), 1, req, "tester")
 
 	assert.NoError(t, err)
 	assert.NotNil(t, repo)

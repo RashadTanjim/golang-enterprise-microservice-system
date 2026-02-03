@@ -2,6 +2,7 @@ package handler
 
 import (
 	"enterprise-microservice-system/common/logger"
+	"enterprise-microservice-system/common/middleware"
 	"enterprise-microservice-system/common/response"
 	"enterprise-microservice-system/services/repository-service/internal/model"
 	"enterprise-microservice-system/services/repository-service/internal/service"
@@ -45,7 +46,8 @@ func (h *RepositoryHandler) CreateRepository(c *gin.Context) {
 		return
 	}
 
-	repo, err := h.service.CreateRepository(c.Request.Context(), &req)
+	actor := resolveActor(c)
+	repo, err := h.service.CreateRepository(c.Request.Context(), &req, actor)
 	if err != nil {
 		h.logger.Error("Failed to create repository", zap.Error(err))
 		response.Error(c, err)
@@ -110,7 +112,8 @@ func (h *RepositoryHandler) UpdateRepository(c *gin.Context) {
 		return
 	}
 
-	repo, err := h.service.UpdateRepository(c.Request.Context(), uint(id), &req)
+	actor := resolveActor(c)
+	repo, err := h.service.UpdateRepository(c.Request.Context(), uint(id), &req, actor)
 	if err != nil {
 		h.logger.Error("Failed to update repository", zap.Uint64("repository_id", id), zap.Error(err))
 		response.Error(c, err)
@@ -138,7 +141,8 @@ func (h *RepositoryHandler) DeleteRepository(c *gin.Context) {
 		return
 	}
 
-	if err := h.service.DeleteRepository(c.Request.Context(), uint(id)); err != nil {
+	actor := resolveActor(c)
+	if err := h.service.DeleteRepository(c.Request.Context(), uint(id), actor); err != nil {
 		h.logger.Error("Failed to delete repository", zap.Uint64("repository_id", id), zap.Error(err))
 		response.Error(c, err)
 		return
@@ -158,7 +162,7 @@ func (h *RepositoryHandler) DeleteRepository(c *gin.Context) {
 // @Param search query string false "Search term"
 // @Param owner_id query int false "Filter by owner ID"
 // @Param visibility query string false "Filter by visibility (public/private)"
-// @Param active query bool false "Filter by active status"
+// @Param status query string false "Filter by status (active/inactive/deleted)"
 // @Success 200 {object} response.Response{data=[]model.Repository}
 // @Router /repositories [get]
 func (h *RepositoryHandler) ListRepositories(c *gin.Context) {
@@ -185,4 +189,11 @@ func (h *RepositoryHandler) ListRepositories(c *gin.Context) {
 	}
 
 	response.SuccessWithMeta(c, repos, meta)
+}
+
+func resolveActor(c *gin.Context) string {
+	if subject, ok := middleware.GetAuthSubject(c); ok && subject != "" {
+		return subject
+	}
+	return "system"
 }

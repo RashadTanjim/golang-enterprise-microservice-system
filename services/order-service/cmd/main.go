@@ -216,7 +216,7 @@ func connectDatabase(cfg *config.Config, log *logger.Logger) (*gorm.DB, error) {
 }
 
 // updateCircuitBreakerMetrics updates circuit breaker state metrics
-func updateCircuitBreakerMetrics(userClient *client.UserClient, metrics *metrics.Metrics, log *logger.Logger) {
+func updateCircuitBreakerMetrics(userClient client.UserServiceClient, metrics *metrics.Metrics, log *logger.Logger) {
 	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 

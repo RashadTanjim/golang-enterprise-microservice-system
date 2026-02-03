@@ -123,7 +123,7 @@ func Load() (*Config, error) {
 			Port:     getEnv("ORDER_SERVICE_DB_PORT", "5432"),
 			User:     getEnv("ORDER_SERVICE_DB_USER", "postgres"),
 			Password: getEnv("ORDER_SERVICE_DB_PASSWORD", "postgres"),
-			DBName:   getEnv("ORDER_SERVICE_DB_NAME", "orderdb"),
+			DBName:   getEnv("ORDER_SERVICE_DB_NAME", "appdb"),
 		},
 		Log: LogConfig{
 			Level: getEnv("ORDER_SERVICE_LOG_LEVEL", "info"),

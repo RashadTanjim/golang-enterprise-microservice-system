@@ -16,10 +16,10 @@ import (
 
 // UserService defines the business logic interface for users
 type UserService interface {
-	CreateUser(ctx context.Context, req *model.CreateUserRequest) (*model.User, error)
+	CreateUser(ctx context.Context, req *model.CreateUserRequest, actor string) (*model.User, error)
 	GetUser(ctx context.Context, id uint) (*model.User, error)
-	UpdateUser(ctx context.Context, id uint, req *model.UpdateUserRequest) (*model.User, error)
-	DeleteUser(ctx context.Context, id uint) error
+	UpdateUser(ctx context.Context, id uint, req *model.UpdateUserRequest, actor string) (*model.User, error)
+	DeleteUser(ctx context.Context, id uint, actor string) error
 	ListUsers(ctx context.Context, query *model.ListUsersQuery) ([]*model.User, int64, error)
 }
 
@@ -38,7 +38,7 @@ func NewUserService(repo repository.UserRepository, cacheClient *cache.Cache) Us
 }
 
 // CreateUser creates a new user
-func (s *userService) CreateUser(ctx context.Context, req *model.CreateUserRequest) (*model.User, error) {
+func (s *userService) CreateUser(ctx context.Context, req *model.CreateUserRequest, actor string) (*model.User, error) {
 	// Check if email already exists
 	existingUser, err := s.repo.FindByEmail(ctx, req.Email)
 	if err != nil && err != gorm.ErrRecordNotFound {
@@ -53,8 +53,14 @@ func (s *userService) CreateUser(ctx context.Context, req *model.CreateUserReque
 		Email:  req.Email,
 		Name:   req.Name,
 		Age:    req.Age,
-		Active: true,
+		Status: model.UserStatusActive,
 	}
+
+	if actor == "" {
+		actor = "system"
+	}
+	user.CreatedBy = actor
+	user.UpdatedBy = actor
 
 	if err := s.repo.Create(ctx, user); err != nil {
 		return nil, errors.NewInternal("failed to create user", err)
@@ -84,7 +90,7 @@ func (s *userService) GetUser(ctx context.Context, id uint) (*model.User, error)
 }
 
 // UpdateUser updates a user
-func (s *userService) UpdateUser(ctx context.Context, id uint, req *model.UpdateUserRequest) (*model.User, error) {
+func (s *userService) UpdateUser(ctx context.Context, id uint, req *model.UpdateUserRequest, actor string) (*model.User, error) {
 	// Get existing user
 	user, err := s.repo.FindByID(ctx, id)
 	if err != nil {
@@ -101,9 +107,13 @@ func (s *userService) UpdateUser(ctx context.Context, id uint, req *model.Update
 	if req.Age != nil {
 		user.Age = *req.Age
 	}
-	if req.Active != nil {
-		user.Active = *req.Active
+	if req.Status != nil {
+		user.Status = *req.Status
 	}
+	if actor == "" {
+		actor = "system"
+	}
+	user.UpdatedBy = actor
 
 	// Save updates
 	if err := s.repo.Update(ctx, user); err != nil {
@@ -116,7 +126,7 @@ func (s *userService) UpdateUser(ctx context.Context, id uint, req *model.Update
 }
 
 // DeleteUser deletes a user
-func (s *userService) DeleteUser(ctx context.Context, id uint) error {
+func (s *userService) DeleteUser(ctx context.Context, id uint, actor string) error {
 	// Check if user exists
 	_, err := s.repo.FindByID(ctx, id)
 	if err != nil {
@@ -126,8 +136,12 @@ func (s *userService) DeleteUser(ctx context.Context, id uint) error {
 		return errors.NewInternal("failed to get user", err)
 	}
 
-	// Delete user
-	if err := s.repo.Delete(ctx, id); err != nil {
+	if actor == "" {
+		actor = "system"
+	}
+
+	// Delete user (status-based soft delete)
+	if err := s.repo.Delete(ctx, id, actor); err != nil {
 		return errors.NewInternal("failed to delete user", err)
 	}
 
@@ -217,13 +231,9 @@ func (s *userService) cacheSetUserList(ctx context.Context, query *model.ListUse
 }
 
 func (s *userService) userListCacheKey(query *model.ListUsersQuery) string {
-	active := "any"
-	if query.Active != nil {
-		if *query.Active {
-			active = "true"
-		} else {
-			active = "false"
-		}
+	status := "any"
+	if query.Status != nil {
+		status = *query.Status
 	}
 
 	search := strings.TrimSpace(query.Search)
@@ -231,5 +241,5 @@ func (s *userService) userListCacheKey(query *model.ListUsersQuery) string {
 		search = "all"
 	}
 
-	return fmt.Sprintf("users:list:p%d:ps%d:search:%s:active:%s", query.Page, query.PageSize, search, active)
+	return fmt.Sprintf("users:list:p%d:ps%d:search:%s:status:%s", query.Page, query.PageSize, search, status)
 }

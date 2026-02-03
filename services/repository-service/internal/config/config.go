@@ -92,7 +92,7 @@ func Load() (*Config, error) {
 			Port:     getEnv("REPOSITORY_SERVICE_DB_PORT", "5432"),
 			User:     getEnv("REPOSITORY_SERVICE_DB_USER", "postgres"),
 			Password: getEnv("REPOSITORY_SERVICE_DB_PASSWORD", "postgres"),
-			DBName:   getEnv("REPOSITORY_SERVICE_DB_NAME", "repositorydb"),
+			DBName:   getEnv("REPOSITORY_SERVICE_DB_NAME", "appdb"),
 		},
 		Log: LogConfig{
 			Level: getEnv("REPOSITORY_SERVICE_LOG_LEVEL", "info"),

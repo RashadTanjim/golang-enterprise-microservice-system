@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"time"
+
 	"enterprise-microservice-system/services/user-service/internal/model"
 
 	"gorm.io/gorm"
@@ -13,7 +15,7 @@ type UserRepository interface {
 	FindByID(ctx context.Context, id uint) (*model.User, error)
 	FindByEmail(ctx context.Context, email string) (*model.User, error)
 	Update(ctx context.Context, user *model.User) error
-	Delete(ctx context.Context, id uint) error
+	Delete(ctx context.Context, id uint, updatedBy string) error
 	List(ctx context.Context, query *model.ListUsersQuery) ([]*model.User, int64, error)
 }
 
@@ -35,7 +37,9 @@ func (r *userRepository) Create(ctx context.Context, user *model.User) error {
 // FindByID finds a user by ID
 func (r *userRepository) FindByID(ctx context.Context, id uint) (*model.User, error) {
 	var user model.User
-	err := r.db.WithContext(ctx).First(&user, id).Error
+	err := r.db.WithContext(ctx).
+		Where("status <> ?", model.UserStatusDeleted).
+		First(&user, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +49,9 @@ func (r *userRepository) FindByID(ctx context.Context, id uint) (*model.User, er
 // FindByEmail finds a user by email
 func (r *userRepository) FindByEmail(ctx context.Context, email string) (*model.User, error) {
 	var user model.User
-	err := r.db.WithContext(ctx).Where("email = ?", email).First(&user).Error
+	err := r.db.WithContext(ctx).
+		Where("email = ? AND status <> ?", email, model.UserStatusDeleted).
+		First(&user).Error
 	if err != nil {
 		return nil, err
 	}
@@ -58,8 +64,19 @@ func (r *userRepository) Update(ctx context.Context, user *model.User) error {
 }
 
 // Delete soft deletes a user
-func (r *userRepository) Delete(ctx context.Context, id uint) error {
-	return r.db.WithContext(ctx).Delete(&model.User{}, id).Error
+func (r *userRepository) Delete(ctx context.Context, id uint, updatedBy string) error {
+	if updatedBy == "" {
+		updatedBy = "system"
+	}
+
+	return r.db.WithContext(ctx).
+		Model(&model.User{}).
+		Where("id = ?", id).
+		Updates(map[string]interface{}{
+			"status":     model.UserStatusDeleted,
+			"updated_by": updatedBy,
+			"updated_at": time.Now().UTC(),
+		}).Error
 }
 
 // List retrieves a paginated list of users
@@ -75,8 +92,10 @@ func (r *userRepository) List(ctx context.Context, query *model.ListUsersQuery) 
 		db = db.Where("name ILIKE ? OR email ILIKE ?", searchPattern, searchPattern)
 	}
 
-	if query.Active != nil {
-		db = db.Where("active = ?", *query.Active)
+	if query.Status != nil {
+		db = db.Where("status = ?", *query.Status)
+	} else {
+		db = db.Where("status <> ?", model.UserStatusDeleted)
 	}
 
 	// Count total

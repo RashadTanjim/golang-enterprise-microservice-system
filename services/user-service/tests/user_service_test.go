@@ -61,7 +61,7 @@ func TestCreateUser(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			user, err := svc.CreateUser(ctx, tt.req)
+	user, err := svc.CreateUser(ctx, tt.req, "tester")
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CreateUser() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -81,6 +81,12 @@ func TestCreateUser(t *testing.T) {
 				if user.Age != tt.req.Age {
 					t.Errorf("Expected age %d, got %d", tt.req.Age, user.Age)
 				}
+				if user.Status != model.UserStatusActive {
+					t.Errorf("Expected status %s, got %s", model.UserStatusActive, user.Status)
+				}
+				if user.CreatedBy == "" || user.UpdatedBy == "" {
+					t.Error("Expected created_by and updated_by to be set")
+				}
 			}
 		})
 	}
@@ -99,7 +105,7 @@ func TestGetUser(t *testing.T) {
 		Name:  "Get User",
 		Age:   28,
 	}
-	createdUser, err := svc.CreateUser(ctx, createReq)
+	createdUser, err := svc.CreateUser(ctx, createReq, "tester")
 	if err != nil {
 		t.Fatalf("Failed to create test user: %v", err)
 	}
@@ -153,7 +159,7 @@ func TestUpdateUser(t *testing.T) {
 		Name:  "Update User",
 		Age:   30,
 	}
-	createdUser, err := svc.CreateUser(ctx, createReq)
+	createdUser, err := svc.CreateUser(ctx, createReq, "tester")
 	if err != nil {
 		t.Fatalf("Failed to create test user: %v", err)
 	}
@@ -165,7 +171,7 @@ func TestUpdateUser(t *testing.T) {
 		Age:  &newAge,
 	}
 
-	updatedUser, err := svc.UpdateUser(ctx, createdUser.ID, updateReq)
+	updatedUser, err := svc.UpdateUser(ctx, createdUser.ID, updateReq, "tester")
 	if err != nil {
 		t.Fatalf("Failed to update user: %v", err)
 	}
@@ -192,13 +198,13 @@ func TestDeleteUser(t *testing.T) {
 		Name:  "Delete User",
 		Age:   32,
 	}
-	createdUser, err := svc.CreateUser(ctx, createReq)
+	createdUser, err := svc.CreateUser(ctx, createReq, "tester")
 	if err != nil {
 		t.Fatalf("Failed to create test user: %v", err)
 	}
 
 	// Delete the user
-	err = svc.DeleteUser(ctx, createdUser.ID)
+	err = svc.DeleteUser(ctx, createdUser.ID, "tester")
 	if err != nil {
 		t.Fatalf("Failed to delete user: %v", err)
 	}
@@ -229,7 +235,7 @@ func TestListUsers(t *testing.T) {
 			Name:  testName(i),
 			Age:   20 + i,
 		}
-		_, err := svc.CreateUser(ctx, createReq)
+		_, err := svc.CreateUser(ctx, createReq, "tester")
 		if err != nil {
 			t.Fatalf("Failed to create test user %d: %v", i, err)
 		}

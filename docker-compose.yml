@@ -1,58 +1,18 @@
 version: '3.8'
 
 services:
-  # PostgreSQL for User Service
-  user-db:
+  # PostgreSQL (shared database)
+  app-db:
     image: postgres:16-alpine
-    container_name: user-db
+    container_name: app-db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: userdb
+      POSTGRES_DB: appdb
     ports:
       - "5432:5432"
     volumes:
-      - user_db_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - microservices
-
-  # PostgreSQL for Order Service
-  order-db:
-    image: postgres:16-alpine
-    container_name: order-db
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: orderdb
-    ports:
-      - "5433:5432"
-    volumes:
-      - order_db_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - microservices
-
-  # PostgreSQL for Repository Service
-  repository-db:
-    image: postgres:16-alpine
-    container_name: repository-db
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: repositorydb
-    ports:
-      - "5434:5432"
-    volumes:
-      - repository_db_data:/var/lib/postgresql/data
+      - app_db_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -69,11 +29,11 @@ services:
     container_name: user-service
     environment:
       - USER_SERVICE_PORT=8081
-      - USER_SERVICE_DB_HOST=user-db
+      - USER_SERVICE_DB_HOST=app-db
       - USER_SERVICE_DB_PORT=5432
       - USER_SERVICE_DB_USER=postgres
       - USER_SERVICE_DB_PASSWORD=postgres
-      - USER_SERVICE_DB_NAME=userdb
+      - USER_SERVICE_DB_NAME=appdb
       - USER_SERVICE_LOG_LEVEL=info
       - USER_SERVICE_RATE_LIMIT=100
       - AUTH_JWT_SECRET=change-me
@@ -92,7 +52,7 @@ services:
     ports:
       - "8081:8081"
     depends_on:
-      user-db:
+      app-db:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -113,11 +73,11 @@ services:
     container_name: order-service
     environment:
       - ORDER_SERVICE_PORT=8082
-      - ORDER_SERVICE_DB_HOST=order-db
+      - ORDER_SERVICE_DB_HOST=app-db
       - ORDER_SERVICE_DB_PORT=5432
       - ORDER_SERVICE_DB_USER=postgres
       - ORDER_SERVICE_DB_PASSWORD=postgres
-      - ORDER_SERVICE_DB_NAME=orderdb
+      - ORDER_SERVICE_DB_NAME=appdb
       - ORDER_SERVICE_LOG_LEVEL=info
       - ORDER_SERVICE_RATE_LIMIT=100
       - ORDER_SERVICE_USER_SERVICE_URL=http://user-service:8081
@@ -139,7 +99,7 @@ services:
     ports:
       - "8082:8082"
     depends_on:
-      order-db:
+      app-db:
         condition: service_healthy
       user-service:
         condition: service_healthy
@@ -162,11 +122,11 @@ services:
     container_name: repository-service
     environment:
       - REPOSITORY_SERVICE_PORT=8083
-      - REPOSITORY_SERVICE_DB_HOST=repository-db
+      - REPOSITORY_SERVICE_DB_HOST=app-db
       - REPOSITORY_SERVICE_DB_PORT=5432
       - REPOSITORY_SERVICE_DB_USER=postgres
       - REPOSITORY_SERVICE_DB_PASSWORD=postgres
-      - REPOSITORY_SERVICE_DB_NAME=repositorydb
+      - REPOSITORY_SERVICE_DB_NAME=appdb
       - REPOSITORY_SERVICE_LOG_LEVEL=info
       - REPOSITORY_SERVICE_RATE_LIMIT=100
       - AUTH_JWT_SECRET=change-me
@@ -182,7 +142,7 @@ services:
     ports:
       - "8083:8083"
     depends_on:
-      repository-db:
+      app-db:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -246,9 +206,7 @@ services:
       - microservices
 
 volumes:
-  user_db_data:
-  order_db_data:
-  repository_db_data:
+  app_db_data:
   redis_data:
   prometheus_data:
 

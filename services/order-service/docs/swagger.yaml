@@ -21,17 +21,23 @@ definitions:
     properties:
       created_at:
         type: string
+      created_by:
+        type: string
       id:
         type: integer
+      order_status:
+        $ref: '#/definitions/enterprise-microservice-system_services_order-service_internal_model.OrderStatus'
       product_id:
         type: string
       quantity:
         type: integer
       status:
-        $ref: '#/definitions/enterprise-microservice-system_services_order-service_internal_model.OrderStatus'
+        type: string
       total_price:
         type: number
       updated_at:
+        type: string
+      updated_by:
         type: string
       user_id:
         type: integer
@@ -54,17 +60,23 @@ definitions:
     properties:
       created_at:
         type: string
+      created_by:
+        type: string
       id:
         type: integer
+      order_status:
+        $ref: '#/definitions/enterprise-microservice-system_services_order-service_internal_model.OrderStatus'
       product_id:
         type: string
       quantity:
         type: integer
       status:
-        $ref: '#/definitions/enterprise-microservice-system_services_order-service_internal_model.OrderStatus'
+        type: string
       total_price:
         type: number
       updated_at:
+        type: string
+      updated_by:
         type: string
       user:
         $ref: '#/definitions/enterprise-microservice-system_services_order-service_internal_model.User'
@@ -73,7 +85,7 @@ definitions:
     type: object
   enterprise-microservice-system_services_order-service_internal_model.UpdateOrderRequest:
     properties:
-      status:
+      order_status:
         allOf:
         - $ref: '#/definitions/enterprise-microservice-system_services_order-service_internal_model.OrderStatus'
         enum:
@@ -85,8 +97,6 @@ definitions:
     type: object
   enterprise-microservice-system_services_order-service_internal_model.User:
     properties:
-      active:
-        type: boolean
       age:
         type: integer
       email:
@@ -94,6 +104,8 @@ definitions:
       id:
         type: integer
       name:
+        type: string
+      status:
         type: string
     type: object
   response.ErrorInfo:
@@ -144,7 +156,11 @@ paths:
         in: query
         name: user_id
         type: integer
-      - description: Filter by status
+      - description: Filter by order status
+        in: query
+        name: order_status
+        type: string
+      - description: Filter by record status (active/deleted)
         in: query
         name: status
         type: string
@@ -298,10 +314,4 @@ paths:
       summary: Update an order
       tags:
       - orders
-securityDefinitions:
-  BearerAuth:
-    type: apiKey
-    name: Authorization
-    in: header
-    description: JWT Bearer token authentication using the Authorization header. Example: 'Bearer {token}'
 swagger: "2.0"

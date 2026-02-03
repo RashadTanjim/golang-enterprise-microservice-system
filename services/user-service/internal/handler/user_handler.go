@@ -2,6 +2,7 @@ package handler
 
 import (
 	"enterprise-microservice-system/common/logger"
+	"enterprise-microservice-system/common/middleware"
 	"enterprise-microservice-system/common/response"
 	"enterprise-microservice-system/services/user-service/internal/model"
 	"enterprise-microservice-system/services/user-service/internal/service"
@@ -45,7 +46,8 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		return
 	}
 
-	user, err := h.service.CreateUser(c.Request.Context(), &req)
+	actor := resolveActor(c)
+	user, err := h.service.CreateUser(c.Request.Context(), &req, actor)
 	if err != nil {
 		h.logger.Error("Failed to create user", zap.Error(err))
 		response.Error(c, err)
@@ -110,7 +112,8 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	user, err := h.service.UpdateUser(c.Request.Context(), uint(id), &req)
+	actor := resolveActor(c)
+	user, err := h.service.UpdateUser(c.Request.Context(), uint(id), &req, actor)
 	if err != nil {
 		h.logger.Error("Failed to update user", zap.Uint64("user_id", id), zap.Error(err))
 		response.Error(c, err)
@@ -138,7 +141,8 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 		return
 	}
 
-	if err := h.service.DeleteUser(c.Request.Context(), uint(id)); err != nil {
+	actor := resolveActor(c)
+	if err := h.service.DeleteUser(c.Request.Context(), uint(id), actor); err != nil {
 		h.logger.Error("Failed to delete user", zap.Uint64("user_id", id), zap.Error(err))
 		response.Error(c, err)
 		return
@@ -156,7 +160,7 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 // @Param page query int false "Page number" default(1)
 // @Param page_size query int false "Page size" default(10)
 // @Param search query string false "Search term"
-// @Param active query bool false "Filter by active status"
+// @Param status query string false "Filter by status (active/inactive/deleted)"
 // @Success 200 {object} response.Response{data=[]model.User}
 // @Router /users [get]
 func (h *UserHandler) ListUsers(c *gin.Context) {
@@ -183,4 +187,11 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 	}
 
 	response.SuccessWithMeta(c, users, meta)
+}
+
+func resolveActor(c *gin.Context) string {
+	if subject, ok := middleware.GetAuthSubject(c); ok && subject != "" {
+		return subject
+	}
+	return "system"
 }

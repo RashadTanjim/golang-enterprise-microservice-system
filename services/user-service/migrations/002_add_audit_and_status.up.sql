@@ -1,0 +1,13 @@
+ALTER TABLE users ADD COLUMN IF NOT EXISTS created_by VARCHAR(100) NOT NULL DEFAULT 'system';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_by VARCHAR(100) NOT NULL DEFAULT 'system';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'active';
+
+UPDATE users
+SET status = CASE WHEN active THEN 'active' ELSE 'inactive' END
+WHERE status IS NULL;
+
+ALTER TABLE users DROP COLUMN IF EXISTS active;
+ALTER TABLE users DROP COLUMN IF EXISTS deleted_at;
+
+DROP INDEX IF EXISTS idx_users_deleted_at;
+CREATE INDEX IF NOT EXISTS idx_users_status ON users (status);

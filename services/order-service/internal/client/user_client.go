@@ -11,6 +11,12 @@ import (
 	"time"
 )
 
+// UserServiceClient defines the user service client behavior needed by the order service.
+type UserServiceClient interface {
+	GetUser(ctx context.Context, userID uint) (*model.User, error)
+	GetCircuitBreakerState() float64
+}
+
 // UserClient handles communication with the user service
 type UserClient struct {
 	baseURL        string

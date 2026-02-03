@@ -1,10 +1,6 @@
 package model
 
-import (
-	"time"
-
-	"gorm.io/gorm"
-)
+import "time"
 
 // OrderStatus represents the status of an order
 type OrderStatus string
@@ -17,17 +13,24 @@ const (
 	OrderStatusCancelled OrderStatus = "cancelled"
 )
 
+const (
+	OrderRecordStatusActive  = "active"
+	OrderRecordStatusDeleted = "deleted"
+)
+
 // Order represents an order in the system
 type Order struct {
-	ID         uint           `gorm:"primarykey" json:"id"`
-	UserID     uint           `gorm:"not null;index" json:"user_id"`
-	ProductID  string         `gorm:"not null" json:"product_id"`
-	Quantity   int            `gorm:"not null" json:"quantity"`
-	TotalPrice float64        `gorm:"not null" json:"total_price"`
-	Status     OrderStatus    `gorm:"type:varchar(20);default:'pending'" json:"status"`
-	CreatedAt  time.Time      `json:"created_at"`
-	UpdatedAt  time.Time      `json:"updated_at"`
-	DeletedAt  gorm.DeletedAt `gorm:"index" json:"-"`
+	ID          uint        `gorm:"primarykey" json:"id"`
+	UserID      uint        `gorm:"not null;index" json:"user_id"`
+	ProductID   string      `gorm:"not null" json:"product_id"`
+	Quantity    int         `gorm:"not null" json:"quantity"`
+	TotalPrice  float64     `gorm:"not null" json:"total_price"`
+	OrderStatus OrderStatus `gorm:"column:order_status;type:varchar(20);not null;default:'pending'" json:"order_status"`
+	Status      string      `gorm:"type:varchar(20);not null;default:'active';index" json:"status"`
+	CreatedBy   string      `gorm:"type:varchar(100);not null;default:'system'" json:"created_by"`
+	UpdatedBy   string      `gorm:"type:varchar(100);not null;default:'system'" json:"updated_by"`
+	CreatedAt   time.Time   `json:"created_at"`
+	UpdatedAt   time.Time   `json:"updated_at"`
 }
 
 // TableName overrides the default table name
@@ -45,16 +48,17 @@ type CreateOrderRequest struct {
 
 // UpdateOrderRequest represents the request to update an order
 type UpdateOrderRequest struct {
-	Status *OrderStatus `json:"status" binding:"omitempty,oneof=pending confirmed shipped delivered cancelled"`
+	OrderStatus *OrderStatus `json:"order_status" binding:"omitempty,oneof=pending confirmed shipped delivered cancelled"`
 }
 
 // ListOrdersQuery represents query parameters for listing orders
 type ListOrdersQuery struct {
-	Page      int          `form:"page" binding:"omitempty,min=1"`
-	PageSize  int          `form:"page_size" binding:"omitempty,min=1,max=100"`
-	UserID    *uint        `form:"user_id"`
-	Status    *OrderStatus `form:"status" binding:"omitempty,oneof=pending confirmed shipped delivered cancelled"`
-	ProductID string       `form:"product_id"`
+	Page        int          `form:"page" binding:"omitempty,min=1"`
+	PageSize    int          `form:"page_size" binding:"omitempty,min=1,max=100"`
+	UserID      *uint        `form:"user_id"`
+	OrderStatus *OrderStatus `form:"order_status" binding:"omitempty,oneof=pending confirmed shipped delivered cancelled"`
+	Status      *string      `form:"status" binding:"omitempty,oneof=active deleted"`
+	ProductID   string       `form:"product_id"`
 }
 
 // ApplyDefaults applies default values to the query
@@ -78,7 +82,7 @@ type User struct {
 	Email  string `json:"email"`
 	Name   string `json:"name"`
 	Age    int    `json:"age"`
-	Active bool   `json:"active"`
+	Status string `json:"status"`
 }
 
 // OrderWithUser combines order with user data

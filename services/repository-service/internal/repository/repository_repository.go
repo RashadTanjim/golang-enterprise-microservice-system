@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"time"
+
 	"enterprise-microservice-system/services/repository-service/internal/model"
 
 	"gorm.io/gorm"
@@ -13,7 +15,7 @@ type RepositoryRepository interface {
 	FindByID(ctx context.Context, id uint) (*model.Repository, error)
 	FindByName(ctx context.Context, name string) (*model.Repository, error)
 	Update(ctx context.Context, repo *model.Repository) error
-	Delete(ctx context.Context, id uint) error
+	Delete(ctx context.Context, id uint, updatedBy string) error
 	List(ctx context.Context, query *model.ListRepositoriesQuery) ([]*model.Repository, int64, error)
 }
 
@@ -35,7 +37,9 @@ func (r *repositoryRepository) Create(ctx context.Context, repo *model.Repositor
 // FindByID finds a repository by ID
 func (r *repositoryRepository) FindByID(ctx context.Context, id uint) (*model.Repository, error) {
 	var repo model.Repository
-	err := r.db.WithContext(ctx).First(&repo, id).Error
+	err := r.db.WithContext(ctx).
+		Where("status <> ?", model.RepositoryStatusDeleted).
+		First(&repo, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +49,9 @@ func (r *repositoryRepository) FindByID(ctx context.Context, id uint) (*model.Re
 // FindByName finds a repository by name
 func (r *repositoryRepository) FindByName(ctx context.Context, name string) (*model.Repository, error) {
 	var repo model.Repository
-	err := r.db.WithContext(ctx).Where("name = ?", name).First(&repo).Error
+	err := r.db.WithContext(ctx).
+		Where("name = ? AND status <> ?", name, model.RepositoryStatusDeleted).
+		First(&repo).Error
 	if err != nil {
 		return nil, err
 	}
@@ -58,8 +64,19 @@ func (r *repositoryRepository) Update(ctx context.Context, repo *model.Repositor
 }
 
 // Delete soft deletes a repository
-func (r *repositoryRepository) Delete(ctx context.Context, id uint) error {
-	return r.db.WithContext(ctx).Delete(&model.Repository{}, id).Error
+func (r *repositoryRepository) Delete(ctx context.Context, id uint, updatedBy string) error {
+	if updatedBy == "" {
+		updatedBy = "system"
+	}
+
+	return r.db.WithContext(ctx).
+		Model(&model.Repository{}).
+		Where("id = ?", id).
+		Updates(map[string]interface{}{
+			"status":     model.RepositoryStatusDeleted,
+			"updated_by": updatedBy,
+			"updated_at": time.Now().UTC(),
+		}).Error
 }
 
 // List retrieves a paginated list of repositories
@@ -83,8 +100,10 @@ func (r *repositoryRepository) List(ctx context.Context, query *model.ListReposi
 		db = db.Where("visibility = ?", query.Visibility)
 	}
 
-	if query.Active != nil {
-		db = db.Where("active = ?", *query.Active)
+	if query.Status != nil {
+		db = db.Where("status = ?", *query.Status)
+	} else {
+		db = db.Where("status <> ?", model.RepositoryStatusDeleted)
 	}
 
 	// Count total

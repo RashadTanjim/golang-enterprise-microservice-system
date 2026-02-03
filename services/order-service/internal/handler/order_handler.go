@@ -2,6 +2,7 @@ package handler
 
 import (
 	"enterprise-microservice-system/common/logger"
+	"enterprise-microservice-system/common/middleware"
 	"enterprise-microservice-system/common/response"
 	"enterprise-microservice-system/services/order-service/internal/model"
 	"enterprise-microservice-system/services/order-service/internal/service"
@@ -45,7 +46,8 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		return
 	}
 
-	order, err := h.service.CreateOrder(c.Request.Context(), &req)
+	actor := resolveActor(c)
+	order, err := h.service.CreateOrder(c.Request.Context(), &req, actor)
 	if err != nil {
 		h.logger.Error("Failed to create order", zap.Error(err))
 		response.Error(c, err)
@@ -110,7 +112,8 @@ func (h *OrderHandler) UpdateOrder(c *gin.Context) {
 		return
 	}
 
-	order, err := h.service.UpdateOrder(c.Request.Context(), uint(id), &req)
+	actor := resolveActor(c)
+	order, err := h.service.UpdateOrder(c.Request.Context(), uint(id), &req, actor)
 	if err != nil {
 		h.logger.Error("Failed to update order", zap.Uint64("order_id", id), zap.Error(err))
 		response.Error(c, err)
@@ -138,7 +141,8 @@ func (h *OrderHandler) DeleteOrder(c *gin.Context) {
 		return
 	}
 
-	if err := h.service.DeleteOrder(c.Request.Context(), uint(id)); err != nil {
+	actor := resolveActor(c)
+	if err := h.service.DeleteOrder(c.Request.Context(), uint(id), actor); err != nil {
 		h.logger.Error("Failed to delete order", zap.Uint64("order_id", id), zap.Error(err))
 		response.Error(c, err)
 		return
@@ -156,7 +160,8 @@ func (h *OrderHandler) DeleteOrder(c *gin.Context) {
 // @Param page query int false "Page number" default(1)
 // @Param page_size query int false "Page size" default(10)
 // @Param user_id query int false "Filter by user ID"
-// @Param status query string false "Filter by status"
+// @Param order_status query string false "Filter by order status"
+// @Param status query string false "Filter by record status (active/deleted)"
 // @Param product_id query string false "Filter by product ID"
 // @Success 200 {object} response.Response{data=[]model.Order}
 // @Router /orders [get]
@@ -184,4 +189,11 @@ func (h *OrderHandler) ListOrders(c *gin.Context) {
 	}
 
 	response.SuccessWithMeta(c, orders, meta)
+}
+
+func resolveActor(c *gin.Context) string {
+	if subject, ok := middleware.GetAuthSubject(c); ok && subject != "" {
+		return subject
+	}
+	return "system"
 }

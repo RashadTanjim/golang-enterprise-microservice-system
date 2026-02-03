@@ -114,9 +114,9 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "boolean",
-                        "description": "Filter by active status",
-                        "name": "active",
+                        "type": "string",
+                        "description": "Filter by status (active/inactive/deleted)",
+                        "name": "status",
                         "in": "query"
                     }
                 ],
@@ -388,9 +388,6 @@ const docTemplate = `{
         "enterprise-microservice-system_services_user-service_internal_model.UpdateUserRequest": {
             "type": "object",
             "properties": {
-                "active": {
-                    "type": "boolean"
-                },
                 "age": {
                     "type": "integer",
                     "maximum": 150,
@@ -400,19 +397,26 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 100,
                     "minLength": 2
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "inactive"
+                    ]
                 }
             }
         },
         "enterprise-microservice-system_services_user-service_internal_model.User": {
             "type": "object",
             "properties": {
-                "active": {
-                    "type": "boolean"
-                },
                 "age": {
                     "type": "integer"
                 },
                 "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
                     "type": "string"
                 },
                 "email": {
@@ -424,7 +428,13 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "status": {
+                    "type": "string"
+                },
                 "updated_at": {
+                    "type": "string"
+                },
+                "updated_by": {
                     "type": "string"
                 }
             }

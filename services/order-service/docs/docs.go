@@ -52,7 +52,13 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Filter by status",
+                        "description": "Filter by order status",
+                        "name": "order_status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by record status (active/deleted)",
                         "name": "status",
                         "in": "query"
                     },
@@ -336,8 +342,14 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
+                "created_by": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "integer"
+                },
+                "order_status": {
+                    "$ref": "#/definitions/enterprise-microservice-system_services_order-service_internal_model.OrderStatus"
                 },
                 "product_id": {
                     "type": "string"
@@ -346,12 +358,15 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "status": {
-                    "$ref": "#/definitions/enterprise-microservice-system_services_order-service_internal_model.OrderStatus"
+                    "type": "string"
                 },
                 "total_price": {
                     "type": "number"
                 },
                 "updated_at": {
+                    "type": "string"
+                },
+                "updated_by": {
                     "type": "string"
                 },
                 "user_id": {
@@ -382,8 +397,14 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
+                "created_by": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "integer"
+                },
+                "order_status": {
+                    "$ref": "#/definitions/enterprise-microservice-system_services_order-service_internal_model.OrderStatus"
                 },
                 "product_id": {
                     "type": "string"
@@ -392,12 +413,15 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "status": {
-                    "$ref": "#/definitions/enterprise-microservice-system_services_order-service_internal_model.OrderStatus"
+                    "type": "string"
                 },
                 "total_price": {
                     "type": "number"
                 },
                 "updated_at": {
+                    "type": "string"
+                },
+                "updated_by": {
                     "type": "string"
                 },
                 "user": {
@@ -411,7 +435,7 @@ const docTemplate = `{
         "enterprise-microservice-system_services_order-service_internal_model.UpdateOrderRequest": {
             "type": "object",
             "properties": {
-                "status": {
+                "order_status": {
                     "enum": [
                         "pending",
                         "confirmed",
@@ -430,9 +454,6 @@ const docTemplate = `{
         "enterprise-microservice-system_services_order-service_internal_model.User": {
             "type": "object",
             "properties": {
-                "active": {
-                    "type": "boolean"
-                },
                 "age": {
                     "type": "integer"
                 },
@@ -443,6 +464,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "status": {
                     "type": "string"
                 }
             }
