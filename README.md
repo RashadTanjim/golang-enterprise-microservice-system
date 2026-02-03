@@ -30,11 +30,13 @@ This system follows a **microservice architecture** with clean separation of con
    │   Port: 8081    │◄──┤   Port: 8082    │   │   Port: 8083        │
    └────────┬────────┘   └────────┬────────┘   └────────┬────────────┘
             │                    │                     │
-       ┌────▼────┐          ┌────▼────┐          ┌──────▼────────┐
-       │ User DB │          │ Order DB│          │ Repository DB │
-       └─────────┘          └─────────┘          └───────────────┘
-            └───────────────┬───────────────┬───────────────┘
+            └───────────────┬────▼─────┬───────────────┘
                             ▼
+                      ┌────────────┐
+                      │  App DB    │
+                      │ PostgreSQL │
+                      └────────────┘
+                            │
                       ┌────────────┐
                       │ Redis Cache│
                       │  Port 6379 │
@@ -50,7 +52,7 @@ This system follows a **microservice architecture** with clean separation of con
 ### Key Architectural Decisions
 
 - **Clean Architecture**: Each service follows the clean architecture pattern with clear separation between transport, service, domain, and repository layers
-- **Microservice Independence**: Each service has its own database (database-per-service pattern)
+- **Shared Data Store**: Services share a single PostgreSQL database with isolated tables per service
 - **Circuit Breaker**: Order service uses circuit breaker pattern for resilient communication with user service
 - **Graceful Degradation**: Services continue operating even when dependencies are unavailable
 - **Observability First**: Comprehensive logging, metrics, and health checks built-in
@@ -178,6 +180,7 @@ enterprise-microservice-system/
 ### 1. CRUD Operations
 - Full RESTful APIs for users, orders, and repositories
 - Repository Service manages repository metadata (name, owner, visibility, URL) with RBAC enforcement
+- Audit fields (`created_by`, `updated_by`) and status-based soft delete across all tables
 - Request validation using Gin's validator
 - Pagination and filtering support
 - Soft delete functionality
@@ -188,7 +191,7 @@ enterprise-microservice-system/
 - Embedded migration runner on service startup
 - Connection pooling
 - Transaction support
-- Separate databases per service
+- Shared PostgreSQL database with service-owned tables
 
 ### 3. Authentication & Authorization
 - JWT-based authentication
@@ -279,7 +282,7 @@ This will start:
 - Repository Service (http://localhost:8083)
 - Web Portal + Gateway (http://localhost:8080)
 - Redis (localhost:6379)
-- PostgreSQL databases
+- PostgreSQL (appdb)
 - Prometheus (http://localhost:9090)
 
 4. Verify services are running:
@@ -386,9 +389,9 @@ make deps
 make install-tools
 ```
 
-3. Start databases:
+3. Start database:
 ```bash
-docker-compose up -d user-db order-db repository-db
+docker-compose up -d app-db
 ```
 
 4. Run migrations (optional if you prefer manual control):
@@ -451,7 +454,7 @@ make dev-order
 | USER_SERVICE_DB_PORT | Database port | 5432 |
 | USER_SERVICE_DB_USER | Database user | postgres |
 | USER_SERVICE_DB_PASSWORD | Database password | postgres |
-| USER_SERVICE_DB_NAME | Database name | userdb |
+| USER_SERVICE_DB_NAME | Database name | appdb |
 | USER_SERVICE_LOG_LEVEL | Log level (debug/info/warn/error) | info |
 | USER_SERVICE_RATE_LIMIT | Requests per second | 100 |
 
@@ -463,7 +466,7 @@ make dev-order
 | ORDER_SERVICE_DB_PORT | Database port | 5432 |
 | ORDER_SERVICE_DB_USER | Database user | postgres |
 | ORDER_SERVICE_DB_PASSWORD | Database password | postgres |
-| ORDER_SERVICE_DB_NAME | Database name | orderdb |
+| ORDER_SERVICE_DB_NAME | Database name | appdb |
 | ORDER_SERVICE_LOG_LEVEL | Log level | info |
 | ORDER_SERVICE_RATE_LIMIT | Requests per second | 100 |
 | ORDER_SERVICE_USER_SERVICE_URL | User service URL | http://localhost:8081 |
@@ -476,7 +479,7 @@ make dev-order
 | REPOSITORY_SERVICE_DB_PORT | Database port | 5432 |
 | REPOSITORY_SERVICE_DB_USER | Database user | postgres |
 | REPOSITORY_SERVICE_DB_PASSWORD | Database password | postgres |
-| REPOSITORY_SERVICE_DB_NAME | Database name | repositorydb |
+| REPOSITORY_SERVICE_DB_NAME | Database name | appdb |
 | REPOSITORY_SERVICE_LOG_LEVEL | Log level | info |
 | REPOSITORY_SERVICE_RATE_LIMIT | Requests per second | 100 |
 
@@ -561,7 +564,7 @@ GET /api/v1/users/{id}
 
 #### List Users
 ```bash
-GET /api/v1/users?page=1&page_size=10&search=john&active=true
+GET /api/v1/users?page=1&page_size=10&search=john&status=active
 ```
 
 #### Update User
@@ -572,7 +575,7 @@ Content-Type: application/json
 {
   "name": "Jane Doe",
   "age": 31,
-  "active": true
+  "status": "active"
 }
 ```
 
@@ -605,7 +608,7 @@ GET /api/v1/orders/{id}
 
 #### List Orders
 ```bash
-GET /api/v1/orders?page=1&page_size=10&user_id=1&status=pending
+GET /api/v1/orders?page=1&page_size=10&user_id=1&order_status=pending
 ```
 
 #### Update Order
@@ -614,7 +617,7 @@ PUT /api/v1/orders/{id}
 Content-Type: application/json
 
 {
-  "status": "confirmed"
+  "order_status": "confirmed"
 }
 ```
 
@@ -648,7 +651,7 @@ GET /api/v1/repositories/{id}
 
 #### List Repositories
 ```bash
-GET /api/v1/repositories?page=1&page_size=10&search=core&owner_id=1&visibility=public&active=true
+GET /api/v1/repositories?page=1&page_size=10&search=core&owner_id=1&visibility=public&status=active
 ```
 
 #### Update Repository
@@ -659,7 +662,7 @@ Content-Type: application/json
 {
   "description": "Updated description",
   "visibility": "public",
-  "active": true
+  "status": "active"
 }
 ```
 
@@ -672,7 +675,7 @@ DELETE /api/v1/repositories/{id}
 - `private` - Private repository (default)
 - `public` - Public repository
 
-### Order Status Values
+### Order Status Values (`order_status`)
 - `pending` - Order created
 - `confirmed` - Order confirmed
 - `shipped` - Order shipped

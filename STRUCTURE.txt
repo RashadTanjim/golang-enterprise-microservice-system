@@ -87,20 +87,22 @@ SERVICES ARCHITECTURE:
                          │
             ┌────────────┴────────────┐
             │                         │
-    ┌───────▼────────┐       ┌───────▼────────┐
-    │  User Service  │       │ Order Service  │
-    │   Port: 8081   │◄──────┤   Port: 8082   │
-    │                │       │                │
-    │ - CRUD Users   │       │ - CRUD Orders  │
-    │ - Validation   │       │ - User Lookup  │
-    │ - Pagination   │       │ - Circuit Break│
-    └───────┬────────┘       └───────┬────────┘
-            │                        │
-    ┌───────▼────────┐       ┌───────▼────────┐
-    │   PostgreSQL   │       │   PostgreSQL   │
-    │    (userdb)    │       │   (orderdb)    │
-    │   Port: 5432   │       │   Port: 5433   │
-    └────────────────┘       └────────────────┘
+    ┌───────▼────────┐  ┌───────▼────────┐  ┌────────▼────────────┐
+    │  User Service  │  │ Order Service  │  │ Repository Service  │
+    │   Port: 8081   │◄─┤   Port: 8082   │  │   Port: 8083         │
+    │                │  │                │  │                     │
+    │ - CRUD Users   │  │ - CRUD Orders  │  │ - CRUD Repos         │
+    │ - Validation   │  │ - User Lookup  │  │ - Visibility         │
+    │ - Pagination   │  │ - Circuit Break│  │ - Search             │
+    └───────┬────────┘  └───────┬────────┘  └────────┬────────────┘
+            │                  │                     │
+            └──────────────┬───▼──────────┬──────────┘
+                           ▼
+                   ┌────────────────┐
+                   │  PostgreSQL    │
+                   │    (appdb)     │
+                   │   Port: 5432   │
+                   └────────────────┘
 
 MIDDLEWARE STACK (Applied to every request):
 ┌────────────────────────────────────────┐

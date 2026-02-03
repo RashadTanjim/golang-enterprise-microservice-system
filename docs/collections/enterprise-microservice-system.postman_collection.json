@@ -368,7 +368,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"status\": \"confirmed\"\n}"
+              "raw": "{\n  \"order_status\": \"confirmed\"\n}"
             }
           },
           "event": [

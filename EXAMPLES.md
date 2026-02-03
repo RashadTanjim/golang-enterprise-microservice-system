@@ -77,8 +77,8 @@ curl "http://localhost:8081/api/v1/users?page=1&page_size=2" \
 curl "http://localhost:8081/api/v1/users?search=alice" \
   -H "Authorization: Bearer $TOKEN"
 
-# Filter by active status
-curl "http://localhost:8081/api/v1/users?active=true" \
+# Filter by status
+curl "http://localhost:8081/api/v1/users?status=active" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -107,7 +107,7 @@ curl -X PUT http://localhost:8081/api/v1/users/1 \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
-    "active": false
+    "status": "inactive"
   }'
 ```
 
@@ -170,8 +170,8 @@ curl http://localhost:8082/api/v1/orders \
 curl "http://localhost:8082/api/v1/orders?user_id=1" \
   -H "Authorization: Bearer $TOKEN"
 
-# Filter by status
-curl "http://localhost:8082/api/v1/orders?status=pending" \
+# Filter by order status
+curl "http://localhost:8082/api/v1/orders?order_status=pending" \
   -H "Authorization: Bearer $TOKEN"
 
 # Filter by product
@@ -201,7 +201,7 @@ curl -X PUT http://localhost:8082/api/v1/orders/1 \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
-    "status": "confirmed"
+    "order_status": "confirmed"
   }'
 
 # Ship order
@@ -209,7 +209,7 @@ curl -X PUT http://localhost:8082/api/v1/orders/1 \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
-    "status": "shipped"
+    "order_status": "shipped"
   }'
 
 # Deliver order
@@ -217,7 +217,7 @@ curl -X PUT http://localhost:8082/api/v1/orders/1 \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
-    "status": "delivered"
+    "order_status": "delivered"
   }'
 
 # Cancel order
@@ -225,7 +225,7 @@ curl -X PUT http://localhost:8082/api/v1/orders/2 \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
-    "status": "cancelled"
+    "order_status": "cancelled"
   }'
 ```
 
@@ -489,7 +489,7 @@ curl -s http://localhost:8082/api/v1/orders/$ORDER_ID | jq '.'
 curl -s -X PUT http://localhost:8082/api/v1/orders/$ORDER_ID \
   -H "Content-Type: application/json" \
   -d '{
-    "status": "confirmed"
+    "order_status": "confirmed"
   }' | jq '.'
 
 # 5. List all orders for the user

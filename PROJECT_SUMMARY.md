@@ -99,7 +99,7 @@ make dev-order     # Hot reload for order service
 - Multi-stage Dockerfiles for optimized images
 - Docker Compose with all dependencies
 - Health checks built into containers
-- Separate databases per service
+- Shared PostgreSQL database with per-service tables
 - Prometheus monitoring included
 
 ### 6. **Testing**
@@ -254,7 +254,7 @@ Lines of Code: ~4,100+
 ## Architectural Highlights
 
 ### 1. **Microservice Independence**
-- Each service has its own database
+- Services share a single database and isolate data by table
 - Services communicate via HTTP with circuit breaker
 - Can be deployed independently
 - Failure isolation

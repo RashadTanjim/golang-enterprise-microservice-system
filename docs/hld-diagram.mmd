@@ -10,9 +10,7 @@ flowchart LR
   end
 
   subgraph Datastores[Datastores]
-    UserDB[(User DB\nPostgreSQL)]
-    OrderDB[(Order DB\nPostgreSQL)]
-    RepoDB[(Repository DB\nPostgreSQL)]
+    AppDB[(Shared PostgreSQL\nappdb)]
     Redis[(Redis Cache\nPort 6379)]
   end
 
@@ -24,9 +22,9 @@ flowchart LR
   PortalUI --> OrderSvc
   PortalUI --> RepoSvc
 
-  UserSvc --> UserDB
-  OrderSvc --> OrderDB
-  RepoSvc --> RepoDB
+  UserSvc --> AppDB
+  OrderSvc --> AppDB
+  RepoSvc --> AppDB
 
   UserSvc <--> Redis
   OrderSvc <--> Redis

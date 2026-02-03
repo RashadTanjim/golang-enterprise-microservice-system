@@ -6,9 +6,7 @@ sequenceDiagram
   participant OrderSvc as Order Service
   participant RepoSvc as Repository Service
   participant Redis as Redis Cache
-  participant UserDB as User DB
-  participant OrderDB as Order DB
-  participant RepoDB as Repository DB
+  participant AppDB as Shared Postgres (appdb)
 
   Client->>Gateway: POST /api/v1/auth/token
   Gateway->>UserSvc: Issue token
@@ -19,8 +17,8 @@ sequenceDiagram
   Gateway->>UserSvc: Forward request
   UserSvc->>Redis: Get user list
   Redis-->>UserSvc: Cache miss
-  UserSvc->>UserDB: Query users
-  UserDB-->>UserSvc: User list
+  UserSvc->>AppDB: Query users table
+  AppDB-->>UserSvc: User list
   UserSvc->>Redis: Set user list
   UserSvc-->>Gateway: Users response
   Gateway-->>Client: Users response
@@ -29,8 +27,8 @@ sequenceDiagram
   Gateway->>OrderSvc: Forward request
   OrderSvc->>UserSvc: Validate user (service token)
   UserSvc-->>OrderSvc: User info
-  OrderSvc->>OrderDB: Create order
-  OrderDB-->>OrderSvc: Order created
+  OrderSvc->>AppDB: Create order
+  AppDB-->>OrderSvc: Order created
   OrderSvc->>Redis: Update order cache
   OrderSvc-->>Gateway: Order response
   Gateway-->>Client: Order response
