@@ -772,6 +772,43 @@ docker-compose logs user-db
    - Adjust `RATE_LIMIT` environment variable
    - Implement user-based rate limiting instead of IP-based
 
+## Improvement Areas
+
+1. **Security Hardening**
+   - Add secret rotation policies and vault-backed secrets.
+   - Enforce mTLS between services.
+   - Add WAF rules and request anomaly detection at the gateway.
+
+2. **Reliability**
+   - Add retries with exponential backoff where appropriate.
+   - Introduce idempotency keys for write operations.
+   - Implement circuit breaker dashboards and alerts.
+
+3. **Performance**
+   - Add caching for read-heavy endpoints.
+   - Optimize database queries with indexes and query profiling.
+   - Add async job processing for heavy tasks.
+
+4. **Observability**
+   - Add distributed tracing (OpenTelemetry + Jaeger/Zipkin).
+   - Centralize logs (Loki/ELK) with correlation IDs.
+   - Add SLO/SLA dashboards.
+
+5. **Platform**
+   - Add Kubernetes manifests or Helm charts.
+   - Add blue/green or canary deployment strategies.
+   - Build automated rollback hooks in CI/CD.
+
+## Future Features
+
+- API Gateway policies (rate limits per user, quotas, tenant-level rules).
+- Service Mesh integration (Istio/Linkerd).
+- Multi-region deployments with active-active routing.
+- Audit logs and RBAC admin UI.
+- Fine-grained permissions and policy-based access control (OPA).
+- Automated data retention and GDPR tools.
+- Billing/usage analytics for API consumers.
+
 ## Contributing
 
 1. Follow the existing code structure
