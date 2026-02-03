@@ -727,6 +727,8 @@ make lint
 
 ### Go Dependencies
 - See `docs/GO_DEPENDENCIES.md` for a full explanation of every Go module in `go.mod`.
+### Git Commit Message Standards
+- See `docs/readme.md` for the commit format, change description, and impacted module guidance.
 ### Swagger
 - Swagger UI is served at `/swagger/index.html` for each service.
 - Regenerate docs with `make swagger` after updating handler annotations.
