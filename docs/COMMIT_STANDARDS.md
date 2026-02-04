@@ -30,7 +30,7 @@ Testing:
 
 Use the primary area affected by the change:
 
-- `user-service`, `order-service`, `repository-service`
+- `user-service`, `order-service`, `audit-log-service`
 - `frontend`, `common`, `monitoring`, `docs`, `infra`
 
 ## Summary Rules

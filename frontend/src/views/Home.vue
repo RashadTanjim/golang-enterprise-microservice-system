@@ -4,7 +4,7 @@
       <p class="eyebrow">System Health</p>
       <h2>Enterprise Microservice Portal</h2>
       <p class="lead">
-        A unified command center for user and order services, built for
+        A unified command center for user, order, and audit log services, built for
         resilience, observability, and secure operations.
       </p>
       <div class="hero-actions">
@@ -51,6 +51,15 @@
       :variant="order.variant"
     />
     <StatusCard
+      title="Audit Log Service"
+      subtitle="Compliance & traceability"
+      :status="auditLog.status"
+      :message="auditLog.message"
+      :last-checked="auditLog.checkedAt"
+      endpoint="/api/v1/audit-logs"
+      :variant="auditLog.variant"
+    />
+    <StatusCard
       title="Gateway"
       subtitle="Nginx routing layer"
       status="Healthy"
@@ -70,7 +79,7 @@ import MetricTile from '@/components/MetricTile.vue';
 import StatusCard from '@/components/StatusCard.vue';
 
 const healthStore = useHealthStore();
-const { user, order, gateway } = storeToRefs(healthStore);
+const { user, order, auditLog, gateway } = storeToRefs(healthStore);
 
 onMounted(() => {
   healthStore.refresh();

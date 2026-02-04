@@ -73,6 +73,25 @@ enterprise-microservice-system/
 │           └── 📁 service/
 │               └── order_service.go        # Business logic
 │
+│   └── 📁 audit-log-service/                # Audit Log Service (8083)
+│       ├── 📄 Dockerfile                    # Container definition
+│       ├── 📄 .air.toml                     # Hot reload config
+│       ├── 📁 cmd/
+│       │   └── main.go                      # Service entry point
+│       └── 📁 internal/
+│           ├── 📁 api/
+│           │   └── router.go               # HTTP routes setup
+│           ├── 📁 config/
+│           │   └── config.go               # Configuration management
+│           ├── 📁 handler/
+│           │   └── audit_log_handler.go    # HTTP request handlers
+│           ├── 📁 model/
+│           │   └── audit_log.go            # Domain models & DTOs
+│           ├── 📁 repository/
+│           │   └── audit_log_repository.go # Database operations
+│           └── 📁 service/
+│               └── audit_log_service.go    # Business logic
+│
 ├── 📁 monitoring/
 │   └── prometheus.yml                       # Prometheus configuration
 │
@@ -88,11 +107,11 @@ SERVICES ARCHITECTURE:
             ┌────────────┴────────────┐
             │                         │
     ┌───────▼────────┐  ┌───────▼────────┐  ┌────────▼────────────┐
-    │  User Service  │  │ Order Service  │  │ Repository Service  │
+    │  User Service  │  │ Order Service  │  │ Audit Log Service   │
     │   Port: 8081   │◄─┤   Port: 8082   │  │   Port: 8083         │
     │                │  │                │  │                     │
-    │ - CRUD Users   │  │ - CRUD Orders  │  │ - CRUD Repos         │
-    │ - Validation   │  │ - User Lookup  │  │ - Visibility         │
+    │ - CRUD Users   │  │ - CRUD Orders  │  │ - CRUD Audit Logs    │
+    │ - Validation   │  │ - User Lookup  │  │ - Compliance         │
     │ - Pagination   │  │ - Circuit Break│  │ - Search             │
     └───────┬────────┘  └───────┬────────┘  └────────┬────────────┘
             │                  │                     │

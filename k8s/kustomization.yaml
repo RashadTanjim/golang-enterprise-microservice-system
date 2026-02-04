@@ -9,6 +9,6 @@ resources:
   - redis.yaml
   - user-service.yaml
   - order-service.yaml
-  - repository-service.yaml
+  - audit-log-service.yaml
   - web-portal.yaml
   - ingress.yaml

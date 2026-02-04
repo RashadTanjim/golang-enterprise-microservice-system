@@ -4,7 +4,7 @@ sequenceDiagram
   participant Gateway as Nginx Gateway
   participant UserSvc as User Service
   participant OrderSvc as Order Service
-  participant RepoSvc as Repository Service
+  participant AuditSvc as Audit Log Service
   participant Redis as Redis Cache
   participant AppDB as Shared Postgres (appdb)
 
@@ -33,9 +33,9 @@ sequenceDiagram
   OrderSvc-->>Gateway: Order response
   Gateway-->>Client: Order response
 
-  Client->>Gateway: GET /api/v1/repositories (Bearer)
-  Gateway->>RepoSvc: Forward request
-  RepoSvc->>Redis: Get repository list
-  Redis-->>RepoSvc: Cache hit
-  RepoSvc-->>Gateway: Repository list
-  Gateway-->>Client: Repository list
+  Client->>Gateway: GET /api/v1/audit-logs (Bearer)
+  Gateway->>AuditSvc: Forward request
+  AuditSvc->>Redis: Get audit log list
+  Redis-->>AuditSvc: Cache hit
+  AuditSvc-->>Gateway: Audit log list
+  Gateway-->>Client: Audit log list

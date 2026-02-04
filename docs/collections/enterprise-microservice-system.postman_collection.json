@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Enterprise Microservice System",
-    "description": "User + Order service API collection with JWT auth.",
+    "description": "User, Order, and Audit Log service API collection with JWT auth.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -561,6 +561,216 @@
                 "exec": [
                   "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
                   "pm.test(\"Metrics present\", function () { pm.expect(pm.response.text().length).to.be.above(0); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Audit Log Service",
+      "item": [
+        {
+          "name": "Create Audit Log",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url_audit_log}}/api/v1/audit-logs",
+              "host": [
+                "{{base_url_audit_log}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "audit-logs"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"user.login\",\n  \"resource_type\": \"user\",\n  \"resource_id\": \"1\",\n  \"description\": \"User signed in\",\n  \"metadata\": \"{\\\"ip\\\":\\\"127.0.0.1\\\"}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 201\", function () { pm.response.to.have.status(201); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Audit log created\", function () { pm.expect(json.success).to.eql(true); pm.expect(json.data).to.have.property(\"id\"); });",
+                  "if (json && json.data && json.data.id) {",
+                  "  pm.environment.set(\"audit_log_id\", json.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Audit Log",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url_audit_log}}/api/v1/audit-logs/{{audit_log_id}}",
+              "host": [
+                "{{base_url_audit_log}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "audit-logs",
+                "{{audit_log_id}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Audit log returned\", function () { pm.expect(json.success).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Audit Logs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url_audit_log}}/api/v1/audit-logs?page=1&page_size=10",
+              "host": [
+                "{{base_url_audit_log}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "audit-logs"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Audit logs array\", function () { pm.expect(Array.isArray(json.data)).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Audit Log",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url_audit_log}}/api/v1/audit-logs/{{audit_log_id}}",
+              "host": [
+                "{{base_url_audit_log}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "audit-logs",
+                "{{audit_log_id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Updated description\",\n  \"status\": \"active\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Audit log updated\", function () { pm.expect(json.success).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Audit Log",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url_audit_log}}/api/v1/audit-logs/{{audit_log_id}}",
+              "host": [
+                "{{base_url_audit_log}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "audit-logs",
+                "{{audit_log_id}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
                 ]
               }
             }

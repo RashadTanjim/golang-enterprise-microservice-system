@@ -2,7 +2,7 @@ name: CD
 
 on:
   push:
-    branches: ["master", "develop"]
+    branches: ["main", "develop"]
   workflow_dispatch:
 
 permissions:
@@ -54,15 +54,15 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX_LOWER }}/order-service:${{ github.sha }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX_LOWER }}/order-service:latest
 
-      - name: Build and push repository-service
+      - name: Build and push audit-log-service
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: services/repository-service/Dockerfile
+          file: services/audit-log-service/Dockerfile
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX_LOWER }}/repository-service:${{ github.sha }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX_LOWER }}/repository-service:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX_LOWER }}/audit-log-service:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX_LOWER }}/audit-log-service:latest
 
       - name: Build and push web-portal
         uses: docker/build-push-action@v6
@@ -111,7 +111,7 @@ jobs:
         run: |
           kubectl -n $K8S_NAMESPACE set image deployment/user-service user-service=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX_LOWER }}/user-service:${{ github.sha }}
           kubectl -n $K8S_NAMESPACE set image deployment/order-service order-service=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX_LOWER }}/order-service:${{ github.sha }}
-          kubectl -n $K8S_NAMESPACE set image deployment/repository-service repository-service=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX_LOWER }}/repository-service:${{ github.sha }}
+          kubectl -n $K8S_NAMESPACE set image deployment/audit-log-service audit-log-service=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX_LOWER }}/audit-log-service:${{ github.sha }}
           kubectl -n $K8S_NAMESPACE set image deployment/web-portal web-portal=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX_LOWER }}/web-portal:${{ github.sha }}
 
       - name: Run migrations
@@ -125,5 +125,5 @@ jobs:
         run: |
           kubectl -n $K8S_NAMESPACE rollout status deployment/user-service --timeout=180s
           kubectl -n $K8S_NAMESPACE rollout status deployment/order-service --timeout=180s
-          kubectl -n $K8S_NAMESPACE rollout status deployment/repository-service --timeout=180s
+          kubectl -n $K8S_NAMESPACE rollout status deployment/audit-log-service --timeout=180s
           kubectl -n $K8S_NAMESPACE rollout status deployment/web-portal --timeout=180s

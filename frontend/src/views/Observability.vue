@@ -15,6 +15,7 @@
         <ul>
           <li>/health/user</li>
           <li>/health/order</li>
+          <li>/health/audit-log</li>
         </ul>
       </article>
       <article class="card">
@@ -23,6 +24,7 @@
         <ul>
           <li>/metrics/user</li>
           <li>/metrics/order</li>
+          <li>/metrics/audit-log</li>
         </ul>
       </article>
       <article class="card">

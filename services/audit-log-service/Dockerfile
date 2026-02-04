@@ -16,9 +16,9 @@ RUN go mod download
 # Copy the entire project
 COPY . .
 
-# Build the repository service
+# Build the audit log service
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags="-w -s" \
-    -o repository-service ./services/repository-service/cmd/main.go
+    -o audit-log-service ./services/audit-log-service/cmd/main.go
 
 # Runtime stage
 FROM alpine:latest
@@ -30,7 +30,7 @@ RUN apk --no-cache add ca-certificates wget
 WORKDIR /root/
 
 # Copy binary from builder
-COPY --from=builder /app/repository-service .
+COPY --from=builder /app/audit-log-service .
 
 # Copy .env.example if needed (optional)
 COPY --from=builder /app/.env.example .
@@ -43,4 +43,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD wget --quiet --tries=1 --spider http://localhost:8083/health || exit 1
 
 # Run the binary
-CMD ["./repository-service"]
+CMD ["./audit-log-service"]

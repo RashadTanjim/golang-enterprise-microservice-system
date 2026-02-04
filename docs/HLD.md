@@ -1,11 +1,11 @@
 # High-Level Design (HLD) – Enterprise Microservice System
 
 ## 1) Overview
-This system is a production-ready microservice architecture built with Go. It consists of three core services (User Service, Order Service, and Repository Service) that share a single PostgreSQL database (tables per service), a shared Redis cache for read-heavy endpoints, shared libraries for cross-cutting concerns, and supporting infrastructure for observability, authentication, and CI.
+This system is a production-ready microservice architecture built with Go. It consists of three core services (User Service, Order Service, and Audit Log Service) that share a single PostgreSQL database (tables per service), a shared Redis cache for read-heavy endpoints, shared libraries for cross-cutting concerns, and supporting infrastructure for observability, authentication, and CI.
 
 ## 2) Goals
 - Provide clean, maintainable microservices with clear boundaries.
-- Support full CRUD operations for users, orders, and repositories.
+- Support full CRUD operations for users, orders, and audit logs.
 - Ensure resilience with circuit breakers and rate limits.
 - Provide observability (metrics, logs, health checks).
 - Secure APIs with JWT authentication and role-based access control.
@@ -28,8 +28,8 @@ This system is a production-ready microservice architecture built with Go. It co
   - Calls User Service to validate user existence and status.
   - Uses circuit breaker for resilience.
 
-- **Repository Service** (port 8083)
-  - Manages repository CRUD and validation.
+- **Audit Log Service** (port 8083)
+  - Captures audit log entries for compliance and traceability.
   - Enforces role-based access for write operations.
 
 ### 4.2 Frontend Portal
@@ -94,11 +94,11 @@ Services isolate data by table and access patterns within a shared database.
 - Migrations run on service startup and can be triggered manually with:
   - `make migrate-user`
   - `make migrate-order`
-- Repository Service uses GORM auto-migrations on startup.
+- Audit Log Service uses GORM auto-migrations on startup.
 
 ## 8) Observability
-- **Health checks**: `/health/user`, `/health/order`, `/health/repository` via gateway.
-- **Metrics**: `/metrics/user`, `/metrics/order`, `/metrics/repository` (Prometheus format).
+- **Health checks**: `/health/user`, `/health/order`, `/health/audit-log` via gateway.
+- **Metrics**: `/metrics/user`, `/metrics/order`, `/metrics/audit-log` (Prometheus format).
 - **Structured logs**: Zap-based JSON logs with request IDs.
 
 ## 9) CI/CD
@@ -113,7 +113,7 @@ Services isolate data by table and access patterns within a shared database.
 
 ## 11) API Docs
 - **Swagger UI** per service:
-  - Gateway: `http://localhost:8080/swagger/user/`, `http://localhost:8080/swagger/order/`, `http://localhost:8080/swagger/repository/`
+  - Gateway: `http://localhost:8080/swagger/user/`, `http://localhost:8080/swagger/order/`, `http://localhost:8080/swagger/audit-log/`
   - Direct: `http://localhost:8081/swagger/index.html`, `http://localhost:8082/swagger/index.html`, `http://localhost:8083/swagger/index.html`
 
 ## 12) Risks and Future Enhancements

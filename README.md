@@ -2,6 +2,8 @@
 
 A production-ready, enterprise-grade microservice system built with Go, featuring clean architecture, comprehensive observability, and industry-standard patterns.
 
+Purpose (R&D sample): Enterprise-grade sample project for Go microservices, showcasing clean architecture, resilient inter-service communication, PostgreSQL and Redis, JWT-based security, Prometheus observability, automated testing, Dockerized deployment, and a Vue.js frontend behind an Nginx gateway.
+
 ## Table of Contents
 
 - [Architecture Overview](#architecture-overview)
@@ -26,7 +28,7 @@ This system follows a **microservice architecture** with clean separation of con
 └───────────┬───────────┘
             │
    ┌────────▼────────┐   ┌────────▼────────┐   ┌────────▼────────────┐
-   │   User Service  │   │  Order Service  │   │ Repository Service  │
+   │   User Service  │   │  Order Service  │   │  Audit Log Service  │
    │   Port: 8081    │◄──┤   Port: 8082    │   │   Port: 8083        │
    └────────┬────────┘   └────────┬────────┘   └────────┬────────────┘
             │                    │                     │
@@ -61,7 +63,7 @@ This system follows a **microservice architecture** with clean separation of con
 
 | Component | Technology |
 |-----------|-----------|
-| Language | Go 1.23 |
+| Language | Go 1.24 |
 | HTTP Framework | Gin |
 | ORM | GORM |
 | Database | PostgreSQL 16 |
@@ -134,7 +136,7 @@ enterprise-microservice-system/
 │       ├── Dockerfile            # Container definition
 │       ├── .air.toml             # Hot reload config
 │       └── docs/                 # Swagger docs (generated)
-│   └── repository-service/       # Repository management service
+│   └── audit-log-service/       # Audit log service
 │       ├── cmd/
 │       │   ├── main.go           # Entry point
 │       │   └── docs.go           # Swagger metadata
@@ -179,8 +181,8 @@ enterprise-microservice-system/
 ## Features
 
 ### 1. CRUD Operations
-- Full RESTful APIs for users, orders, and repositories
-- Repository Service manages repository metadata (name, owner, visibility, URL) with RBAC enforcement
+- Full RESTful APIs for users, orders, and audit logs
+- Audit Log Service captures audit events (actor, action, resource, metadata) with RBAC enforcement
 - Audit fields (`created_by`, `updated_by`) and status-based soft delete across all tables
 - Request validation using Gin's validator
 - Pagination and filtering support
@@ -255,7 +257,7 @@ enterprise-microservice-system/
 
 ### Prerequisites
 
-- Go 1.23 or later
+- Go 1.24 or later
 - Docker and Docker Compose
 - Make (optional but recommended)
 - PostgreSQL (if running locally without Docker)
@@ -280,7 +282,7 @@ make docker-up
 This will start:
 - User Service (http://localhost:8081)
 - Order Service (http://localhost:8082)
-- Repository Service (http://localhost:8083)
+- Audit Log Service (http://localhost:8083)
 - Web Portal + Gateway (http://localhost:8080)
 - Redis (localhost:6379)
 - PostgreSQL (appdb)
@@ -293,7 +295,7 @@ curl http://localhost:8082/health
 curl http://localhost:8083/health
 curl http://localhost:8080/health/user
 curl http://localhost:8080/health/order
-curl http://localhost:8080/health/repository
+curl http://localhost:8080/health/audit-log
 ```
 
 5. Open the portal:
@@ -323,7 +325,7 @@ Health checks (via gateway):
 ```bash
 curl http://localhost:8080/health/user
 curl http://localhost:8080/health/order
-curl http://localhost:8080/health/repository
+curl http://localhost:8080/health/audit-log
 ```
 
 Issue a token (via gateway):
@@ -355,27 +357,27 @@ curl -X POST http://localhost:8080/api/v1/orders \
   -d '{"user_id":1,"product_id":"PROD-1","quantity":1,"total_price":9.99}'
 ```
 
-Repository endpoints (via gateway):
+Audit log endpoints (via gateway):
 ```bash
-curl -H "Authorization: Bearer <token>" http://localhost:8080/api/v1/repositories
-curl -X POST http://localhost:8080/api/v1/repositories \
+curl -H "Authorization: Bearer <token>" http://localhost:8080/api/v1/audit-logs
+curl -X POST http://localhost:8080/api/v1/audit-logs \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token>" \
-  -d '{"name":"repo-one","owner_id":1,"visibility":"private","url":"https://example.com/repo-one"}'
+  -d '{"action":"user.login","resource_type":"user","resource_id":"1","description":"User signed in","metadata":"{\"ip\":\"127.0.0.1\"}"}'
 ```
 
 Metrics (via gateway):
 ```bash
 curl http://localhost:8080/metrics/user
 curl http://localhost:8080/metrics/order
-curl http://localhost:8080/metrics/repository
+curl http://localhost:8080/metrics/audit-log
 ```
 
 Swagger UI (via gateway):
 ```
 http://localhost:8080/swagger/user/
 http://localhost:8080/swagger/order/
-http://localhost:8080/swagger/repository/
+http://localhost:8080/swagger/audit-log/
 ```
 
 ### Local Development Setup
@@ -415,7 +417,7 @@ make run-order
 
 In terminal 3:
 ```bash
-make run-repository
+make run-audit-log
 ```
 
 Or run all services concurrently:
@@ -472,17 +474,17 @@ make dev-order
 | ORDER_SERVICE_RATE_LIMIT | Requests per second | 100 |
 | ORDER_SERVICE_USER_SERVICE_URL | User service URL | http://localhost:8081 |
 
-#### Repository Service
+#### Audit Log Service
 | Variable | Description | Default |
 |----------|-------------|---------|
-| REPOSITORY_SERVICE_PORT | HTTP port | 8083 |
-| REPOSITORY_SERVICE_DB_HOST | Database host | localhost |
-| REPOSITORY_SERVICE_DB_PORT | Database port | 5432 |
-| REPOSITORY_SERVICE_DB_USER | Database user | postgres |
-| REPOSITORY_SERVICE_DB_PASSWORD | Database password | postgres |
-| REPOSITORY_SERVICE_DB_NAME | Database name | appdb |
-| REPOSITORY_SERVICE_LOG_LEVEL | Log level | info |
-| REPOSITORY_SERVICE_RATE_LIMIT | Requests per second | 100 |
+| AUDIT_LOG_SERVICE_PORT | HTTP port | 8083 |
+| AUDIT_LOG_SERVICE_DB_HOST | Database host | localhost |
+| AUDIT_LOG_SERVICE_DB_PORT | Database port | 5432 |
+| AUDIT_LOG_SERVICE_DB_USER | Database user | postgres |
+| AUDIT_LOG_SERVICE_DB_PASSWORD | Database password | postgres |
+| AUDIT_LOG_SERVICE_DB_NAME | Database name | appdb |
+| AUDIT_LOG_SERVICE_LOG_LEVEL | Log level | info |
+| AUDIT_LOG_SERVICE_RATE_LIMIT | Requests per second | 100 |
 
 #### Circuit Breaker
 | Variable | Description | Default |
@@ -517,7 +519,7 @@ make dev-order
 ## API Documentation
 
 Swagger UI:
-- Via gateway: http://localhost:8080/swagger/user/, http://localhost:8080/swagger/order/, http://localhost:8080/swagger/repository/
+- Via gateway: http://localhost:8080/swagger/user/, http://localhost:8080/swagger/order/, http://localhost:8080/swagger/audit-log/
 - Direct: http://localhost:8081/swagger/index.html, http://localhost:8082/swagger/index.html, http://localhost:8083/swagger/index.html
 
 ### Authentication
@@ -627,54 +629,53 @@ Content-Type: application/json
 DELETE /api/v1/orders/{id}
 ```
 
-### Repository Service (Port 8083)
+### Audit Log Service (Port 8083)
 
-Repository endpoints require a valid JWT. Admin or user roles can read repositories; admin is required for create, update, and delete.
+Audit log endpoints require a valid JWT. Admin or user roles can read audit logs; admin is required for create, update, and delete.
 
-#### Create Repository
+#### Create Audit Log
 ```bash
-POST /api/v1/repositories
+POST /api/v1/audit-logs
 Content-Type: application/json
 
 {
-  "name": "repo-one",
-  "description": "Core services repo",
-  "owner_id": 1,
-  "visibility": "private",
-  "url": "https://example.com/repo-one"
+  "action": "order.created",
+  "resource_type": "order",
+  "resource_id": "42",
+  "description": "Order created via API",
+  "metadata": "{\"source\":\"portal\"}"
 }
 ```
 
-#### Get Repository
+#### Get Audit Log
 ```bash
-GET /api/v1/repositories/{id}
+GET /api/v1/audit-logs/{id}
 ```
 
-#### List Repositories
+#### List Audit Logs
 ```bash
-GET /api/v1/repositories?page=1&page_size=10&search=core&owner_id=1&visibility=public&status=active
+GET /api/v1/audit-logs?page=1&page_size=10&search=order&actor=admin&action=order.created&resource_type=order&resource_id=42&status=active
 ```
 
-#### Update Repository
+#### Update Audit Log
 ```bash
-PUT /api/v1/repositories/{id}
+PUT /api/v1/audit-logs/{id}
 Content-Type: application/json
 
 {
   "description": "Updated description",
-  "visibility": "public",
   "status": "active"
 }
 ```
 
-#### Delete Repository
+#### Delete Audit Log
 ```bash
-DELETE /api/v1/repositories/{id}
+DELETE /api/v1/audit-logs/{id}
 ```
 
-### Repository Visibility Values
-- `private` - Private repository (default)
-- `public` - Public repository
+### Audit Log Status Values
+- `active` - Visible audit log entry
+- `deleted` - Soft-deleted entry
 
 ### Order Status Values (`order_status`)
 - `pending` - Order created
@@ -709,7 +710,7 @@ make test
 ```bash
 make test-user
 make test-order
-make test-repository
+make test-audit-log
 ```
 
 ### Run Linter
@@ -729,7 +730,7 @@ make lint
 ### Postman Collection
 - Import `docs/collections/enterprise-microservice-system.postman_collection.json` and `docs/collections/enterprise-microservice-system.postman_environment.json`.
 - Run “Auth → Issue Token” to populate the `token` environment variable before calling protected endpoints.
-- Collection requests include assertions so the Collection Runner can execute a full automated run.
+- Collection requests include assertions so the Collection Runner can execute a full automated run (including audit log flows).
 
 ### High-Level Design
 - See `docs/HLD.md` for the system architecture and data flow details.
@@ -752,11 +753,13 @@ make build             # Build all services
 make run              # Run all services
 make run-user         # Run user service
 make run-order        # Run order service
-make run-repository   # Run repository service
+make run-audit-log    # Run audit log service
 make migrate-user     # Run user database migrations
 make migrate-order    # Run order database migrations
 make test             # Run all tests
-make test-repository  # Run repository service tests
+make test-user        # Run user service tests
+make test-order       # Run order service tests
+make test-audit-log   # Run audit log service tests
 make lint             # Run linter
 make link-check       # Check docs links
 make swagger          # Generate Swagger docs
@@ -803,8 +806,8 @@ docker build -t user-service:latest -f services/user-service/Dockerfile .
 # Build order service
 docker build -t order-service:latest -f services/order-service/Dockerfile .
 
-# Build repository service
-docker build -t repository-service:latest -f services/repository-service/Dockerfile .
+# Build audit log service
+docker build -t audit-log-service:latest -f services/audit-log-service/Dockerfile .
 ```
 
 ### Kubernetes Deployment
@@ -873,7 +876,7 @@ Key metrics to monitor:
 1. **Request Metrics**
    - `user_service_requests_total` - Total HTTP requests
    - `order_service_requests_total` - Total HTTP requests
-   - `repository_service_requests_total` - Total HTTP requests
+   - `audit_log_service_requests_total` - Total HTTP requests
    - `*_request_duration_seconds` - Request latency
 
 2. **Error Metrics**
@@ -910,7 +913,7 @@ curl http://localhost:8083/health
 
 ## Call Flow Diagram
 
-The end-to-end request flow (auth, user list, order creation, repository list) is documented here:
+The end-to-end request flow (auth, user list, order creation, audit log list) is documented here:
 
 ![Call Flow](docs/call-flow.svg)
 
@@ -974,7 +977,7 @@ docker-compose logs user-db
 - API Gateway policies (rate limits per user, quotas, tenant-level rules).
 - Service Mesh integration (Istio/Linkerd).
 - Multi-region deployments with active-active routing.
-- Audit logs and RBAC admin UI.
+- Audit log analytics dashboards and retention policies.
 - Fine-grained permissions and policy-based access control (OPA).
 - Automated data retention and GDPR tools.
 - Billing/usage analytics for API consumers.

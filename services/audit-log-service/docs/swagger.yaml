@@ -1,28 +1,10 @@
 definitions:
-  enterprise-microservice-system_services_repository-service_internal_model.CreateRepositoryRequest:
+  enterprise-microservice-system_services_audit-log-service_internal_model.AuditLog:
     properties:
-      description:
-        maxLength: 1000
+      action:
         type: string
-      name:
-        maxLength: 100
-        minLength: 2
+      actor:
         type: string
-      owner_id:
-        type: integer
-      url:
-        type: string
-      visibility:
-        enum:
-        - public
-        - private
-        type: string
-    required:
-    - name
-    - owner_id
-    type: object
-  enterprise-microservice-system_services_repository-service_internal_model.Repository:
-    properties:
       created_at:
         type: string
       created_by:
@@ -31,41 +13,59 @@ definitions:
         type: string
       id:
         type: integer
-      name:
+      metadata:
         type: string
-      owner_id:
-        type: integer
+      resource_id:
+        type: string
+      resource_type:
+        type: string
       status:
         type: string
       updated_at:
         type: string
       updated_by:
         type: string
-      url:
-        type: string
-      visibility:
-        type: string
     type: object
-  enterprise-microservice-system_services_repository-service_internal_model.UpdateRepositoryRequest:
+  enterprise-microservice-system_services_audit-log-service_internal_model.CreateAuditLogRequest:
     properties:
-      description:
-        maxLength: 1000
-        type: string
-      name:
+      action:
         maxLength: 100
         minLength: 2
+        type: string
+      actor:
+        maxLength: 120
+        type: string
+      description:
+        maxLength: 2000
+        type: string
+      metadata:
+        maxLength: 5000
+        type: string
+      resource_id:
+        maxLength: 100
+        minLength: 1
+        type: string
+      resource_type:
+        maxLength: 100
+        minLength: 2
+        type: string
+    required:
+    - action
+    - resource_id
+    - resource_type
+    type: object
+  enterprise-microservice-system_services_audit-log-service_internal_model.UpdateAuditLogRequest:
+    properties:
+      description:
+        maxLength: 2000
+        type: string
+      metadata:
+        maxLength: 5000
         type: string
       status:
         enum:
         - active
-        - inactive
-        type: string
-      url:
-        type: string
-      visibility:
-        enum:
-        - public
-        - private
+        - deleted
         type: string
     type: object
   response.ErrorInfo:
@@ -99,7 +99,7 @@ definitions:
 info:
   contact: {}
 paths:
-  /repositories:
+  /audit-logs:
     get:
       parameters:
       - default: 1
@@ -116,15 +116,23 @@ paths:
         in: query
         name: search
         type: string
-      - description: Filter by owner ID
+      - description: Filter by actor
         in: query
-        name: owner_id
-        type: integer
-      - description: Filter by visibility (public/private)
-        in: query
-        name: visibility
+        name: actor
         type: string
-      - description: Filter by status (active/inactive/deleted)
+      - description: Filter by action
+        in: query
+        name: action
+        type: string
+      - description: Filter by resource type
+        in: query
+        name: resource_type
+        type: string
+      - description: Filter by resource ID
+        in: query
+        name: resource_id
+        type: string
+      - description: Filter by status (active/deleted)
         in: query
         name: status
         type: string
@@ -139,24 +147,24 @@ paths:
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/enterprise-microservice-system_services_repository-service_internal_model.Repository'
+                    $ref: '#/definitions/enterprise-microservice-system_services_audit-log-service_internal_model.AuditLog'
                   type: array
               type: object
       security:
       - BearerAuth: []
-      summary: List repositories
+      summary: List audit log entries
       tags:
-      - repositories
+      - audit-logs
     post:
       consumes:
       - application/json
       parameters:
-      - description: Repository data
+      - description: Audit log data
         in: body
-        name: repository
+        name: audit_log
         required: true
         schema:
-          $ref: '#/definitions/enterprise-microservice-system_services_repository-service_internal_model.CreateRepositoryRequest'
+          $ref: '#/definitions/enterprise-microservice-system_services_audit-log-service_internal_model.CreateAuditLogRequest'
       produces:
       - application/json
       responses:
@@ -167,25 +175,21 @@ paths:
             - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/enterprise-microservice-system_services_repository-service_internal_model.Repository'
+                  $ref: '#/definitions/enterprise-microservice-system_services_audit-log-service_internal_model.AuditLog'
               type: object
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/response.Response'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: Create a new repository
+      summary: Create a new audit log entry
       tags:
-      - repositories
-  /repositories/{id}:
+      - audit-logs
+  /audit-logs/{id}:
     delete:
       parameters:
-      - description: Repository ID
+      - description: Audit log ID
         in: path
         name: id
         required: true
@@ -203,12 +207,12 @@ paths:
             $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: Delete a repository
+      summary: Delete an audit log entry
       tags:
-      - repositories
+      - audit-logs
     get:
       parameters:
-      - description: Repository ID
+      - description: Audit log ID
         in: path
         name: id
         required: true
@@ -223,7 +227,7 @@ paths:
             - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/enterprise-microservice-system_services_repository-service_internal_model.Repository'
+                  $ref: '#/definitions/enterprise-microservice-system_services_audit-log-service_internal_model.AuditLog'
               type: object
         "404":
           description: Not Found
@@ -231,24 +235,24 @@ paths:
             $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: Get a repository by ID
+      summary: Get an audit log entry by ID
       tags:
-      - repositories
+      - audit-logs
     put:
       consumes:
       - application/json
       parameters:
-      - description: Repository ID
+      - description: Audit log ID
         in: path
         name: id
         required: true
         type: integer
-      - description: Repository update data
+      - description: Audit log update data
         in: body
-        name: repository
+        name: audit_log
         required: true
         schema:
-          $ref: '#/definitions/enterprise-microservice-system_services_repository-service_internal_model.UpdateRepositoryRequest'
+          $ref: '#/definitions/enterprise-microservice-system_services_audit-log-service_internal_model.UpdateAuditLogRequest'
       produces:
       - application/json
       responses:
@@ -259,7 +263,7 @@ paths:
             - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/enterprise-microservice-system_services_repository-service_internal_model.Repository'
+                  $ref: '#/definitions/enterprise-microservice-system_services_audit-log-service_internal_model.AuditLog'
               type: object
         "400":
           description: Bad Request
@@ -271,7 +275,7 @@ paths:
             $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: Update a repository
+      summary: Update an audit log entry
       tags:
-      - repositories
+      - audit-logs
 swagger: "2.0"

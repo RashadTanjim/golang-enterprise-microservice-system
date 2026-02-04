@@ -10,7 +10,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// Config holds all configuration for repository service
+// Config holds all configuration for audit log service
 type Config struct {
 	Server   ServerConfig
 	Database DatabaseConfig
@@ -62,7 +62,7 @@ func Load() (*Config, error) {
 	// Try to load .env file (optional in production)
 	_ = godotenv.Load()
 
-	rateLimit, err := strconv.Atoi(getEnv("REPOSITORY_SERVICE_RATE_LIMIT", "100"))
+	rateLimit, err := strconv.Atoi(getEnv("AUDIT_LOG_SERVICE_RATE_LIMIT", "100"))
 	if err != nil {
 		rateLimit = 100
 	}
@@ -84,18 +84,18 @@ func Load() (*Config, error) {
 
 	config := &Config{
 		Server: ServerConfig{
-			Port:      getEnv("REPOSITORY_SERVICE_PORT", "8083"),
+			Port:      getEnv("AUDIT_LOG_SERVICE_PORT", "8083"),
 			RateLimit: rateLimit,
 		},
 		Database: DatabaseConfig{
-			Host:     getEnv("REPOSITORY_SERVICE_DB_HOST", "localhost"),
-			Port:     getEnv("REPOSITORY_SERVICE_DB_PORT", "5432"),
-			User:     getEnv("REPOSITORY_SERVICE_DB_USER", "postgres"),
-			Password: getEnv("REPOSITORY_SERVICE_DB_PASSWORD", "postgres"),
-			DBName:   getEnv("REPOSITORY_SERVICE_DB_NAME", "appdb"),
+			Host:     getEnv("AUDIT_LOG_SERVICE_DB_HOST", "localhost"),
+			Port:     getEnv("AUDIT_LOG_SERVICE_DB_PORT", "5432"),
+			User:     getEnv("AUDIT_LOG_SERVICE_DB_USER", "postgres"),
+			Password: getEnv("AUDIT_LOG_SERVICE_DB_PASSWORD", "postgres"),
+			DBName:   getEnv("AUDIT_LOG_SERVICE_DB_NAME", "appdb"),
 		},
 		Log: LogConfig{
-			Level: getEnv("REPOSITORY_SERVICE_LOG_LEVEL", "info"),
+			Level: getEnv("AUDIT_LOG_SERVICE_LOG_LEVEL", "info"),
 		},
 		Auth: AuthConfig{
 			Secret:   getEnv("AUTH_JWT_SECRET", "change-me"),

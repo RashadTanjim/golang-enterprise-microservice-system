@@ -7,12 +7,12 @@ import (
 	"enterprise-microservice-system/common/logger"
 	"enterprise-microservice-system/common/metrics"
 	"enterprise-microservice-system/common/middleware"
-	"enterprise-microservice-system/services/repository-service/internal/api"
-	"enterprise-microservice-system/services/repository-service/internal/config"
-	"enterprise-microservice-system/services/repository-service/internal/handler"
-	"enterprise-microservice-system/services/repository-service/internal/model"
-	"enterprise-microservice-system/services/repository-service/internal/repository"
-	"enterprise-microservice-system/services/repository-service/internal/service"
+	"enterprise-microservice-system/services/audit-log-service/internal/api"
+	"enterprise-microservice-system/services/audit-log-service/internal/config"
+	"enterprise-microservice-system/services/audit-log-service/internal/handler"
+	"enterprise-microservice-system/services/audit-log-service/internal/model"
+	"enterprise-microservice-system/services/audit-log-service/internal/repository"
+	"enterprise-microservice-system/services/audit-log-service/internal/service"
 	"fmt"
 	"net/http"
 	"os"
@@ -41,7 +41,7 @@ func main() {
 	}
 	defer log.Sync()
 
-	log.Info("Starting repository service",
+	log.Info("Starting audit log service",
 		zap.String("port", cfg.Server.Port),
 		zap.String("log_level", cfg.Log.Level),
 	)
@@ -53,29 +53,29 @@ func main() {
 	}
 
 	// Auto-migrate database schema
-	if err := db.AutoMigrate(&model.Repository{}); err != nil {
+	if err := db.AutoMigrate(&model.AuditLog{}); err != nil {
 		log.Fatal("Failed to migrate database", zap.Error(err))
 	}
 	log.Info("Database migration completed")
 
 	// Initialize dependencies
-	repoRepo := repository.NewRepositoryRepository(db)
-	repoCache, err := cache.NewRedisCache(cache.Config{
+	auditRepo := repository.NewAuditLogRepository(db)
+	auditCache, err := cache.NewRedisCache(cache.Config{
 		Enabled:    cfg.Redis.Enabled,
 		Host:       cfg.Redis.Host,
 		Port:       cfg.Redis.Port,
 		Password:   cfg.Redis.Password,
 		DB:         cfg.Redis.DB,
 		DefaultTTL: cfg.Redis.DefaultTTL,
-	}, "repository-service")
+	}, "audit-log-service")
 	if err != nil {
 		log.Warn("Redis cache disabled", zap.Error(err))
 	}
-	repoService := service.NewRepositoryService(repoRepo, repoCache)
-	repoHandler := handler.NewRepositoryHandler(repoService, log)
+	auditService := service.NewAuditLogService(auditRepo, auditCache)
+	auditHandler := handler.NewAuditLogHandler(auditService, log)
 
 	// Initialize metrics
-	metricsCollector := metrics.NewMetrics("repository_service")
+	metricsCollector := metrics.NewMetrics("audit_log_service")
 
 	// Initialize rate limiter
 	rateLimiter := middleware.NewRateLimiter(cfg.Server.RateLimit, cfg.Server.RateLimit*2)
@@ -88,7 +88,7 @@ func main() {
 	}
 
 	// Setup router
-	routerSetup := api.NewRouter(repoHandler, log, metricsCollector, rateLimiter, authConfig)
+	routerSetup := api.NewRouter(auditHandler, log, metricsCollector, rateLimiter, authConfig)
 	router := routerSetup.Setup()
 
 	// Create HTTP server

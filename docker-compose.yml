@@ -114,21 +114,21 @@ services:
       timeout: 10s
       retries: 3
 
-  # Repository Service
-  repository-service:
+  # Audit Log Service
+  audit-log-service:
     build:
       context: .
-      dockerfile: services/repository-service/Dockerfile
-    container_name: repository-service
+      dockerfile: services/audit-log-service/Dockerfile
+    container_name: audit-log-service
     environment:
-      - REPOSITORY_SERVICE_PORT=8083
-      - REPOSITORY_SERVICE_DB_HOST=app-db
-      - REPOSITORY_SERVICE_DB_PORT=5432
-      - REPOSITORY_SERVICE_DB_USER=postgres
-      - REPOSITORY_SERVICE_DB_PASSWORD=postgres
-      - REPOSITORY_SERVICE_DB_NAME=appdb
-      - REPOSITORY_SERVICE_LOG_LEVEL=info
-      - REPOSITORY_SERVICE_RATE_LIMIT=100
+      - AUDIT_LOG_SERVICE_PORT=8083
+      - AUDIT_LOG_SERVICE_DB_HOST=app-db
+      - AUDIT_LOG_SERVICE_DB_PORT=5432
+      - AUDIT_LOG_SERVICE_DB_USER=postgres
+      - AUDIT_LOG_SERVICE_DB_PASSWORD=postgres
+      - AUDIT_LOG_SERVICE_DB_NAME=appdb
+      - AUDIT_LOG_SERVICE_LOG_LEVEL=info
+      - AUDIT_LOG_SERVICE_RATE_LIMIT=100
       - AUTH_JWT_SECRET=change-me
       - AUTH_JWT_ISSUER=enterprise-microservice-system
       - AUTH_JWT_AUDIENCE=enterprise-microservice-system
@@ -199,7 +199,7 @@ services:
         condition: service_healthy
       order-service:
         condition: service_healthy
-      repository-service:
+      audit-log-service:
         condition: service_healthy
     restart: unless-stopped
     networks:

@@ -5,7 +5,7 @@ const defaultHeaders = {
   'Content-Type': 'application/json'
 };
 
-const allowedHealthServices = new Set(['user', 'order', 'repository']);
+const allowedHealthServices = new Set(['user', 'order', 'audit-log']);
 
 export class ApiError extends Error {
   constructor(message, status = 0, code = 'API_ERROR', details = null) {

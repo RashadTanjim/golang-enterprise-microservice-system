@@ -5,8 +5,8 @@ import (
 	"enterprise-microservice-system/common/logger"
 	"enterprise-microservice-system/common/metrics"
 	"enterprise-microservice-system/common/middleware"
-	repodocs "enterprise-microservice-system/services/repository-service/docs"
-	"enterprise-microservice-system/services/repository-service/internal/handler"
+	auditdocs "enterprise-microservice-system/services/audit-log-service/docs"
+	"enterprise-microservice-system/services/audit-log-service/internal/handler"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -15,9 +15,9 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-// Router sets up all routes for the repository service
+// Router sets up all routes for the audit log service
 type Router struct {
-	handler     *handler.RepositoryHandler
+	handler     *handler.AuditLogHandler
 	logger      *logger.Logger
 	metrics     *metrics.Metrics
 	rateLimiter *middleware.RateLimiter
@@ -26,7 +26,7 @@ type Router struct {
 
 // NewRouter creates a new router
 func NewRouter(
-	handler *handler.RepositoryHandler,
+	handler *handler.AuditLogHandler,
 	logger *logger.Logger,
 	metrics *metrics.Metrics,
 	rateLimiter *middleware.RateLimiter,
@@ -62,7 +62,7 @@ func (r *Router) Setup() *gin.Engine {
 	// Metrics endpoint (Prometheus)
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
-	repodocs.SwaggerInfo.BasePath = "/api/v1"
+	auditdocs.SwaggerInfo.BasePath = "/api/v1"
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// API v1 routes
@@ -71,13 +71,13 @@ func (r *Router) Setup() *gin.Engine {
 	protected := v1.Group("/")
 	protected.Use(middleware.AuthMiddleware(r.authConfig))
 
-	repositories := protected.Group("/repositories")
+	auditLogs := protected.Group("/audit-logs")
 	{
-		repositories.POST("", middleware.RequireRoles("admin"), r.handler.CreateRepository)
-		repositories.GET("", middleware.RequireRoles("admin", "user"), r.handler.ListRepositories)
-		repositories.GET("/:id", middleware.RequireRoles("admin", "user"), r.handler.GetRepository)
-		repositories.PUT("/:id", middleware.RequireRoles("admin"), r.handler.UpdateRepository)
-		repositories.DELETE("/:id", middleware.RequireRoles("admin"), r.handler.DeleteRepository)
+		auditLogs.POST("", middleware.RequireRoles("admin"), r.handler.CreateAuditLog)
+		auditLogs.GET("", middleware.RequireRoles("admin", "user"), r.handler.ListAuditLogs)
+		auditLogs.GET("/:id", middleware.RequireRoles("admin", "user"), r.handler.GetAuditLog)
+		auditLogs.PUT("/:id", middleware.RequireRoles("admin"), r.handler.UpdateAuditLog)
+		auditLogs.DELETE("/:id", middleware.RequireRoles("admin"), r.handler.DeleteAuditLog)
 	}
 
 	return router
@@ -87,6 +87,6 @@ func (r *Router) Setup() *gin.Engine {
 func (r *Router) healthCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "healthy",
-		"service": "repository-service",
+		"service": "audit-log-service",
 	})
 }

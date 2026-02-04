@@ -6,7 +6,7 @@ flowchart LR
   subgraph Services[Go Microservices]
     UserSvc[User Service\nPort 8081]
     OrderSvc[Order Service\nPort 8082]
-    RepoSvc[Repository Service\nPort 8083]
+    AuditSvc[Audit Log Service\nPort 8083]
   end
 
   subgraph Datastores[Datastores]
@@ -20,18 +20,18 @@ flowchart LR
 
   PortalUI --> UserSvc
   PortalUI --> OrderSvc
-  PortalUI --> RepoSvc
+  PortalUI --> AuditSvc
 
   UserSvc --> AppDB
   OrderSvc --> AppDB
-  RepoSvc --> AppDB
+  AuditSvc --> AppDB
 
   UserSvc <--> Redis
   OrderSvc <--> Redis
-  RepoSvc <--> Redis
+  AuditSvc <--> Redis
 
   UserSvc --> Prometheus
   OrderSvc --> Prometheus
-  RepoSvc --> Prometheus
+  AuditSvc --> Prometheus
 
   OrderSvc -. service call .-> UserSvc

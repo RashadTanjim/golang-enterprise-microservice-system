@@ -25,5 +25,6 @@ describe('Home view', () => {
     expect(wrapper.text()).toContain('Enterprise Microservice Portal');
     expect(wrapper.text()).toContain('User Service');
     expect(wrapper.text()).toContain('Order Service');
+    expect(wrapper.text()).toContain('Audit Log Service');
   });
 });
