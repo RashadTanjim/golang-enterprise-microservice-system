@@ -199,6 +199,14 @@ go get github.com/RashadTanjim/enterprise-microservice-system/common@v1.2.3
 
 For local development in this repo, the root `go.mod` includes a `replace` directive pointing to `./common` so changes are picked up without publishing.
 
+### Private Repo Access (GOPRIVATE)
+
+If this repository is private, configure Go to treat it as a private module:
+
+```bash
+go env -w GOPRIVATE=github.com/RashadTanjim/enterprise-microservice-system
+```
+
 ### Layer Responsibilities
 
 1. **Handler Layer**: Receives HTTP requests, validates input, calls service layer, returns HTTP responses
