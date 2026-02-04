@@ -2,13 +2,7 @@ package main
 
 import (
 	"context"
-	"github.com/RashadTanjim/enterprise-microservice-system/common/audit"
-	"github.com/RashadTanjim/enterprise-microservice-system/common/auth"
-	"github.com/RashadTanjim/enterprise-microservice-system/common/cache"
-	"github.com/RashadTanjim/enterprise-microservice-system/common/circuitbreaker"
-	"github.com/RashadTanjim/enterprise-microservice-system/common/logger"
-	"github.com/RashadTanjim/enterprise-microservice-system/common/metrics"
-	"github.com/RashadTanjim/enterprise-microservice-system/common/middleware"
+	"database/sql"
 	"enterprise-microservice-system/services/order-service/internal/api"
 	"enterprise-microservice-system/services/order-service/internal/client"
 	"enterprise-microservice-system/services/order-service/internal/config"
@@ -16,6 +10,13 @@ import (
 	"enterprise-microservice-system/services/order-service/internal/repository"
 	"enterprise-microservice-system/services/order-service/internal/service"
 	"fmt"
+	"github.com/RashadTanjim/enterprise-microservice-system/common/audit"
+	"github.com/RashadTanjim/enterprise-microservice-system/common/auth"
+	"github.com/RashadTanjim/enterprise-microservice-system/common/cache"
+	"github.com/RashadTanjim/enterprise-microservice-system/common/circuitbreaker"
+	"github.com/RashadTanjim/enterprise-microservice-system/common/logger"
+	"github.com/RashadTanjim/enterprise-microservice-system/common/metrics"
+	"github.com/RashadTanjim/enterprise-microservice-system/common/middleware"
 	"net/http"
 	"os"
 	"os/signal"
@@ -49,7 +50,7 @@ func main() {
 	)
 
 	// Connect to database
-	db, err := connectDatabase(cfg, log)
+	db, sqlDB, err := connectDatabase(cfg, log)
 	if err != nil {
 		log.Fatal("Failed to connect to database", zap.Error(err))
 	}
@@ -163,7 +164,7 @@ func main() {
 }
 
 // connectDatabase establishes a connection to the PostgreSQL database
-func connectDatabase(cfg *config.Config, log *logger.Logger) (*gorm.DB, error) {
+func connectDatabase(cfg *config.Config, log *logger.Logger) (*gorm.DB, *sql.DB, error) {
 	dsn := cfg.Database.DSN()
 
 	// Configure GORM
@@ -194,13 +195,13 @@ func connectDatabase(cfg *config.Config, log *logger.Logger) (*gorm.DB, error) {
 	}
 
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Configure connection pool
 	sqlDB, err := db.DB()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	sqlDB.SetMaxIdleConns(10)
@@ -208,7 +209,7 @@ func connectDatabase(cfg *config.Config, log *logger.Logger) (*gorm.DB, error) {
 	sqlDB.SetConnMaxLifetime(time.Hour)
 
 	log.Info("Database connection established")
-	return db, nil
+	return db, sqlDB, nil
 }
 
 // updateCircuitBreakerMetrics updates circuit breaker state metrics
