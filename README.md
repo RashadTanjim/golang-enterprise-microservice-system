@@ -826,6 +826,9 @@ enterprise.local -> your ingress controller IP
 
 Update the image registry paths in the `k8s/*.yaml` files to match your registry.
 
+Full guide:
+- `docs/K8S_DEPLOYMENT.md`
+
 ### Production Considerations
 
 1. **Security**
