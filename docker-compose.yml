@@ -57,6 +57,8 @@ services:
     depends_on:
       app-db:
         condition: service_healthy
+      migration-service:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
     restart: unless-stopped
@@ -67,6 +69,32 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+
+  # Migration Service (runs user + order migrations)
+  migration-service:
+    build:
+      context: .
+      dockerfile: services/migration-service/Dockerfile
+    container_name: migration-service
+    command: ["./migration-service", "--target", "all"]
+    environment:
+      - MIGRATION_SERVICE_LOG_LEVEL=info
+      - USER_SERVICE_DB_HOST=app-db
+      - USER_SERVICE_DB_PORT=5432
+      - USER_SERVICE_DB_USER=postgres
+      - USER_SERVICE_DB_PASSWORD=postgres
+      - USER_SERVICE_DB_NAME=appdb
+      - ORDER_SERVICE_DB_HOST=app-db
+      - ORDER_SERVICE_DB_PORT=5432
+      - ORDER_SERVICE_DB_USER=postgres
+      - ORDER_SERVICE_DB_PASSWORD=postgres
+      - ORDER_SERVICE_DB_NAME=appdb
+    depends_on:
+      app-db:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - microservices
 
   # Order Service
   order-service:
@@ -107,6 +135,8 @@ services:
     depends_on:
       app-db:
         condition: service_healthy
+      migration-service:
+        condition: service_completed_successfully
       user-service:
         condition: service_healthy
       redis:

@@ -64,6 +64,16 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX_LOWER }}/audit-log-service:${{ github.sha }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX_LOWER }}/audit-log-service:latest
 
+      - name: Build and push migration-service
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: services/migration-service/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX_LOWER }}/migration-service:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX_LOWER }}/migration-service:latest
+
       - name: Build and push web-portal
         uses: docker/build-push-action@v6
         with:

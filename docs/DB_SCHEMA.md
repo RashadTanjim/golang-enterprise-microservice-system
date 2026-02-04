@@ -1,6 +1,6 @@
 # Database Schema Overview
 
-This project uses a shared PostgreSQL database (`appdb`) with tables owned by each service. The user and order services manage SQL migrations, while the audit log service uses GORM auto-migrations.
+This project uses a shared PostgreSQL database (`appdb`) with tables owned by each service. The migration service manages SQL migrations for the user and order services, while the audit log service uses GORM auto-migrations.
 
 ## Conventions
 
@@ -96,6 +96,6 @@ Status values:
 
 ## Migration Sources
 
-- User Service: `services/user-service/migrations/`
-- Order Service: `services/order-service/migrations/`
+- User Service: `services/migration-service/migrations/user/`
+- Order Service: `services/migration-service/migrations/order/`
 - Audit Log Service: GORM auto-migrate on startup (see `services/audit-log-service/internal/model/audit_log.go`)

@@ -31,6 +31,16 @@ enterprise-microservice-system/
 │       └── response.go                      # Standard API responses
 │
 ├── 📁 services/
+│   ├── 📁 migration-service/                # Database migrations runner
+│   │   ├── 📄 Dockerfile                    # Container definition
+│   │   ├── 📁 cmd/
+│   │   │   └── main.go                      # Service entry point
+│   │   ├── 📁 internal/
+│   │   │   └── 📁 config/
+│   │   │       └── config.go               # Configuration management
+│   │   └── 📁 migrations/
+│   │       ├── 📁 user/                     # User service migrations
+│   │       └── 📁 order/                    # Order service migrations
 │   ├── 📁 user-service/                     # User Management Service (8081)
 │   │   ├── 📄 Dockerfile                    # Container definition
 │   │   ├── 📄 .air.toml                     # Hot reload config
@@ -97,7 +107,9 @@ enterprise-microservice-system/
 │
 └── 📁 bin/                                  # Built binaries (gitignored)
     ├── user-service                         # User service binary
-    └── order-service                        # Order service binary
+    ├── order-service                        # Order service binary
+    ├── audit-log-service                    # Audit log service binary
+    └── migration-service                    # Migration service binary
 
 SERVICES ARCHITECTURE:
 ┌─────────────────────────────────────────────────────────────────┐

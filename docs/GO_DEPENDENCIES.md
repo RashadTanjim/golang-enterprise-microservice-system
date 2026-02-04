@@ -8,7 +8,7 @@ This document describes every module listed in `go.mod` and why it exists in thi
 | --- | --- |
 | github.com/gin-gonic/gin | HTTP framework used by all services. |
 | github.com/golang-jwt/jwt/v5 | JWT signing and verification for auth. |
-| github.com/golang-migrate/migrate/v4 | Database migrations for user/order services. |
+| github.com/golang-migrate/migrate/v4 | Database migrations executed by the migration service. |
 | github.com/google/uuid | Request ID generation middleware. |
 | github.com/joho/godotenv | Loads `.env` files in local/dev. |
 | github.com/prometheus/client_golang | Prometheus metrics instrumentation. |
