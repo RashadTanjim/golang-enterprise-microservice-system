@@ -19,6 +19,7 @@ type Config struct {
 	CircuitBreaker CircuitBreakerConfig
 	Auth           AuthConfig
 	Redis          RedisConfig
+	AuditLog       AuditLogConfig
 }
 
 // ServerConfig holds server configuration
@@ -73,6 +74,13 @@ type RedisConfig struct {
 	DefaultTTL time.Duration
 }
 
+// AuditLogConfig holds audit log service configuration.
+type AuditLogConfig struct {
+	Enabled bool
+	URL     string
+	Timeout time.Duration
+}
+
 // Load loads configuration from environment variables
 func Load() (*Config, error) {
 	// Try to load .env file (optional in production)
@@ -113,6 +121,11 @@ func Load() (*Config, error) {
 		cacheDB = 0
 	}
 
+	auditTimeoutSeconds, err := strconv.Atoi(getEnv("AUDIT_LOG_SERVICE_TIMEOUT_SECONDS", "3"))
+	if err != nil {
+		auditTimeoutSeconds = 3
+	}
+
 	config := &Config{
 		Server: ServerConfig{
 			Port:      getEnv("ORDER_SERVICE_PORT", "8082"),
@@ -151,6 +164,11 @@ func Load() (*Config, error) {
 			Password:   getEnv("REDIS_PASSWORD", ""),
 			DB:         cacheDB,
 			DefaultTTL: time.Duration(cacheTTLSeconds) * time.Second,
+		},
+		AuditLog: AuditLogConfig{
+			Enabled: getEnvBool("AUDIT_LOG_SERVICE_ENABLED", true),
+			URL:     getEnv("AUDIT_LOG_SERVICE_URL", "http://localhost:8083"),
+			Timeout: time.Duration(auditTimeoutSeconds) * time.Second,
 		},
 	}
 

@@ -42,7 +42,7 @@ func TestIssueTokenSuccess(t *testing.T) {
 		TokenTTL: time.Minute,
 	}
 
-	h := NewAuthHandler(log, cfg, "admin", "secret", []string{"admin", "user"})
+	h := NewAuthHandler(log, nil, cfg, "admin", "secret", []string{"admin", "user"})
 
 	router := gin.New()
 	router.POST("/token", h.IssueToken)
@@ -89,7 +89,7 @@ func TestIssueTokenInvalidCredentials(t *testing.T) {
 		TokenTTL: time.Minute,
 	}
 
-	h := NewAuthHandler(log, cfg, "admin", "secret", []string{"admin"})
+	h := NewAuthHandler(log, nil, cfg, "admin", "secret", []string{"admin"})
 
 	router := gin.New()
 	router.POST("/token", h.IssueToken)
@@ -126,7 +126,7 @@ func TestIssueTokenRolesNotAllowed(t *testing.T) {
 		TokenTTL: time.Minute,
 	}
 
-	h := NewAuthHandler(log, cfg, "admin", "secret", []string{"admin"})
+	h := NewAuthHandler(log, nil, cfg, "admin", "secret", []string{"admin"})
 
 	router := gin.New()
 	router.POST("/token", h.IssueToken)

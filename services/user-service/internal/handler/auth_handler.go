@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"enterprise-microservice-system/common/audit"
 	"enterprise-microservice-system/common/auth"
 	"enterprise-microservice-system/common/errors"
 	"enterprise-microservice-system/common/logger"
@@ -14,6 +15,7 @@ import (
 // AuthHandler handles authentication token issuance.
 type AuthHandler struct {
 	logger       *logger.Logger
+	auditClient  *audit.Client
 	authConfig   auth.Config
 	clientID     string
 	clientSecret string
@@ -36,9 +38,10 @@ type TokenResponse struct {
 }
 
 // NewAuthHandler creates a new auth handler.
-func NewAuthHandler(log *logger.Logger, authConfig auth.Config, clientID, clientSecret string, clientRoles []string) *AuthHandler {
+func NewAuthHandler(log *logger.Logger, auditClient *audit.Client, authConfig auth.Config, clientID, clientSecret string, clientRoles []string) *AuthHandler {
 	return &AuthHandler{
 		logger:       log,
+		auditClient:  auditClient,
 		authConfig:   authConfig,
 		clientID:     clientID,
 		clientSecret: clientSecret,
@@ -93,6 +96,17 @@ func (h *AuthHandler) IssueToken(c *gin.Context) {
 		ExpiresAt:   expiresAt,
 		Roles:       roles,
 	})
+
+	h.trackAudit(c, audit.Event{
+		Actor:        req.ClientID,
+		Action:       "auth.token.issued",
+		ResourceType: "auth",
+		ResourceID:   req.ClientID,
+		Description:  "JWT token issued",
+		Metadata: encodeMetadata(map[string]interface{}{
+			"roles": roles,
+		}),
+	}, token)
 }
 
 func rolesAllowed(requested []string, allowed []string) bool {
@@ -109,3 +123,12 @@ func rolesAllowed(requested []string, allowed []string) bool {
 
 	return true
 }
+
+func (h *AuthHandler) trackAudit(c *gin.Context, event audit.Event, token string) {
+	if h.auditClient == nil {
+		return
+	}
+	h.auditClient.Track(c.Request.Context(), event, token)
+}
+
+// encodeMetadata is defined in metadata.go for reuse across handlers.

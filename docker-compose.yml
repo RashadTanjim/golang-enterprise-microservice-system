@@ -49,6 +49,9 @@ services:
       - REDIS_PASSWORD=
       - REDIS_DB=0
       - REDIS_TTL_SECONDS=300
+      - AUDIT_LOG_SERVICE_ENABLED=true
+      - AUDIT_LOG_SERVICE_URL=http://audit-log-service:8083
+      - AUDIT_LOG_SERVICE_TIMEOUT_SECONDS=3
     ports:
       - "8081:8081"
     depends_on:
@@ -96,6 +99,9 @@ services:
       - REDIS_PASSWORD=
       - REDIS_DB=0
       - REDIS_TTL_SECONDS=300
+      - AUDIT_LOG_SERVICE_ENABLED=true
+      - AUDIT_LOG_SERVICE_URL=http://audit-log-service:8083
+      - AUDIT_LOG_SERVICE_TIMEOUT_SECONDS=3
     ports:
       - "8082:8082"
     depends_on:

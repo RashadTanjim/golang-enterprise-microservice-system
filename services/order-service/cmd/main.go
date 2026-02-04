@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"enterprise-microservice-system/common/audit"
 	"enterprise-microservice-system/common/auth"
 	"enterprise-microservice-system/common/cache"
 	"enterprise-microservice-system/common/circuitbreaker"
@@ -109,8 +110,15 @@ func main() {
 	if err != nil {
 		log.Warn("Redis cache disabled", zap.Error(err))
 	}
+
+	auditClient := audit.NewClient(audit.Config{
+		Enabled: cfg.AuditLog.Enabled,
+		BaseURL: cfg.AuditLog.URL,
+		Timeout: cfg.AuditLog.Timeout,
+	}, log)
+
 	orderService := service.NewOrderService(orderRepo, userClient, orderCache)
-	orderHandler := handler.NewOrderHandler(orderService, log)
+	orderHandler := handler.NewOrderHandler(orderService, auditClient, log)
 
 	// Initialize metrics
 	metricsCollector := metrics.NewMetrics("order_service")

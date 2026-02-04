@@ -1,11 +1,13 @@
 package handler
 
 import (
+	"enterprise-microservice-system/common/audit"
 	"enterprise-microservice-system/common/logger"
 	"enterprise-microservice-system/common/middleware"
 	"enterprise-microservice-system/common/response"
 	"enterprise-microservice-system/services/user-service/internal/model"
 	"enterprise-microservice-system/services/user-service/internal/service"
+	"fmt"
 	"math"
 	"strconv"
 
@@ -15,15 +17,17 @@ import (
 
 // UserHandler handles HTTP requests for users
 type UserHandler struct {
-	service service.UserService
-	logger  *logger.Logger
+	service     service.UserService
+	auditClient *audit.Client
+	logger      *logger.Logger
 }
 
 // NewUserHandler creates a new user handler
-func NewUserHandler(service service.UserService, logger *logger.Logger) *UserHandler {
+func NewUserHandler(service service.UserService, auditClient *audit.Client, logger *logger.Logger) *UserHandler {
 	return &UserHandler{
-		service: service,
-		logger:  logger,
+		service:     service,
+		auditClient: auditClient,
+		logger:      logger,
 	}
 }
 
@@ -55,6 +59,17 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	}
 
 	h.logger.Info("User created successfully", zap.Uint("user_id", user.ID))
+	h.trackAudit(c, audit.Event{
+		Actor:        actor,
+		Action:       "user.create",
+		ResourceType: "user",
+		ResourceID:   fmt.Sprintf("%d", user.ID),
+		Description:  "User created",
+		Metadata: encodeMetadata(map[string]interface{}{
+			"email": user.Email,
+			"name":  user.Name,
+		}),
+	})
 	response.Created(c, user)
 }
 
@@ -83,6 +98,13 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 	}
 
 	response.Success(c, user)
+	h.trackAudit(c, audit.Event{
+		Actor:        resolveActor(c),
+		Action:       "user.get",
+		ResourceType: "user",
+		ResourceID:   fmt.Sprintf("%d", user.ID),
+		Description:  "User fetched",
+	})
 }
 
 // UpdateUser handles updating a user
@@ -121,6 +143,16 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	}
 
 	h.logger.Info("User updated successfully", zap.Uint64("user_id", id))
+	h.trackAudit(c, audit.Event{
+		Actor:        actor,
+		Action:       "user.update",
+		ResourceType: "user",
+		ResourceID:   fmt.Sprintf("%d", user.ID),
+		Description:  "User updated",
+		Metadata: encodeMetadata(map[string]interface{}{
+			"status": user.Status,
+		}),
+	})
 	response.Success(c, user)
 }
 
@@ -149,6 +181,13 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 	}
 
 	h.logger.Info("User deleted successfully", zap.Uint64("user_id", id))
+	h.trackAudit(c, audit.Event{
+		Actor:        actor,
+		Action:       "user.delete",
+		ResourceType: "user",
+		ResourceID:   fmt.Sprintf("%d", id),
+		Description:  "User deleted",
+	})
 	response.Success(c, gin.H{"message": "user deleted successfully"})
 }
 
@@ -187,6 +226,19 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 	}
 
 	response.SuccessWithMeta(c, users, meta)
+	h.trackAudit(c, audit.Event{
+		Actor:        resolveActor(c),
+		Action:       "user.list",
+		ResourceType: "user",
+		ResourceID:   "list",
+		Description:  "User list fetched",
+		Metadata: encodeMetadata(map[string]interface{}{
+			"page":      query.Page,
+			"page_size": query.PageSize,
+			"search":    query.Search,
+			"status":    query.Status,
+		}),
+	})
 }
 
 func resolveActor(c *gin.Context) string {
@@ -195,3 +247,12 @@ func resolveActor(c *gin.Context) string {
 	}
 	return "system"
 }
+
+func (h *UserHandler) trackAudit(c *gin.Context, event audit.Event) {
+	if h.auditClient == nil {
+		return
+	}
+	h.auditClient.Track(c.Request.Context(), event, c.GetHeader("Authorization"))
+}
+
+// encodeMetadata is defined in metadata.go for reuse across handlers.

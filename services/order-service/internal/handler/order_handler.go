@@ -1,11 +1,14 @@
 package handler
 
 import (
+	"encoding/json"
+	"enterprise-microservice-system/common/audit"
 	"enterprise-microservice-system/common/logger"
 	"enterprise-microservice-system/common/middleware"
 	"enterprise-microservice-system/common/response"
 	"enterprise-microservice-system/services/order-service/internal/model"
 	"enterprise-microservice-system/services/order-service/internal/service"
+	"fmt"
 	"math"
 	"strconv"
 
@@ -15,15 +18,17 @@ import (
 
 // OrderHandler handles HTTP requests for orders
 type OrderHandler struct {
-	service service.OrderService
-	logger  *logger.Logger
+	service     service.OrderService
+	auditClient *audit.Client
+	logger      *logger.Logger
 }
 
 // NewOrderHandler creates a new order handler
-func NewOrderHandler(service service.OrderService, logger *logger.Logger) *OrderHandler {
+func NewOrderHandler(service service.OrderService, auditClient *audit.Client, logger *logger.Logger) *OrderHandler {
 	return &OrderHandler{
-		service: service,
-		logger:  logger,
+		service:     service,
+		auditClient: auditClient,
+		logger:      logger,
 	}
 }
 
@@ -55,6 +60,18 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 	}
 
 	h.logger.Info("Order created successfully", zap.Uint("order_id", order.ID))
+	h.trackAudit(c, audit.Event{
+		Actor:        actor,
+		Action:       "order.create",
+		ResourceType: "order",
+		ResourceID:   fmt.Sprintf("%d", order.ID),
+		Description:  "Order created",
+		Metadata: encodeMetadata(map[string]interface{}{
+			"user_id":     order.UserID,
+			"product_id":  order.ProductID,
+			"total_price": order.TotalPrice,
+		}),
+	})
 	response.Created(c, order)
 }
 
@@ -83,6 +100,13 @@ func (h *OrderHandler) GetOrder(c *gin.Context) {
 	}
 
 	response.Success(c, order)
+	h.trackAudit(c, audit.Event{
+		Actor:        resolveActor(c),
+		Action:       "order.get",
+		ResourceType: "order",
+		ResourceID:   fmt.Sprintf("%d", id),
+		Description:  "Order fetched",
+	})
 }
 
 // UpdateOrder handles updating an order
@@ -121,6 +145,16 @@ func (h *OrderHandler) UpdateOrder(c *gin.Context) {
 	}
 
 	h.logger.Info("Order updated successfully", zap.Uint64("order_id", id))
+	h.trackAudit(c, audit.Event{
+		Actor:        actor,
+		Action:       "order.update",
+		ResourceType: "order",
+		ResourceID:   fmt.Sprintf("%d", order.ID),
+		Description:  "Order updated",
+		Metadata: encodeMetadata(map[string]interface{}{
+			"order_status": order.OrderStatus,
+		}),
+	})
 	response.Success(c, order)
 }
 
@@ -149,6 +183,13 @@ func (h *OrderHandler) DeleteOrder(c *gin.Context) {
 	}
 
 	h.logger.Info("Order deleted successfully", zap.Uint64("order_id", id))
+	h.trackAudit(c, audit.Event{
+		Actor:        actor,
+		Action:       "order.delete",
+		ResourceType: "order",
+		ResourceID:   fmt.Sprintf("%d", id),
+		Description:  "Order deleted",
+	})
 	response.Success(c, gin.H{"message": "order deleted successfully"})
 }
 
@@ -189,6 +230,21 @@ func (h *OrderHandler) ListOrders(c *gin.Context) {
 	}
 
 	response.SuccessWithMeta(c, orders, meta)
+	h.trackAudit(c, audit.Event{
+		Actor:        resolveActor(c),
+		Action:       "order.list",
+		ResourceType: "order",
+		ResourceID:   "list",
+		Description:  "Order list fetched",
+		Metadata: encodeMetadata(map[string]interface{}{
+			"page":         query.Page,
+			"page_size":    query.PageSize,
+			"user_id":      query.UserID,
+			"order_status": query.OrderStatus,
+			"status":       query.Status,
+			"product_id":   query.ProductID,
+		}),
+	})
 }
 
 func resolveActor(c *gin.Context) string {
@@ -196,4 +252,22 @@ func resolveActor(c *gin.Context) string {
 		return subject
 	}
 	return "system"
+}
+
+func (h *OrderHandler) trackAudit(c *gin.Context, event audit.Event) {
+	if h.auditClient == nil {
+		return
+	}
+	h.auditClient.Track(c.Request.Context(), event, c.GetHeader("Authorization"))
+}
+
+func encodeMetadata(value interface{}) string {
+	if value == nil {
+		return ""
+	}
+	payload, err := json.Marshal(value)
+	if err != nil {
+		return ""
+	}
+	return string(payload)
 }

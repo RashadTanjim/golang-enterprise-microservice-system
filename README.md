@@ -516,6 +516,13 @@ make dev-order
 | REDIS_DB | Redis database index | 0 |
 | REDIS_TTL_SECONDS | Default cache TTL in seconds | 300 |
 
+#### Audit Log Integration (User + Order Service)
+| Variable | Description | Default |
+|----------|-------------|---------|
+| AUDIT_LOG_SERVICE_ENABLED | Enable audit event publishing | true |
+| AUDIT_LOG_SERVICE_URL | Audit log service base URL | http://localhost:8083 |
+| AUDIT_LOG_SERVICE_TIMEOUT_SECONDS | HTTP timeout in seconds | 3 |
+
 ## API Documentation
 
 Swagger UI:

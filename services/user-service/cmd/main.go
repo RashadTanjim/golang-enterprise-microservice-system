@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"enterprise-microservice-system/common/audit"
 	"enterprise-microservice-system/common/auth"
 	"enterprise-microservice-system/common/cache"
 	"enterprise-microservice-system/common/logger"
@@ -77,7 +78,14 @@ func main() {
 		log.Warn("Redis cache disabled", zap.Error(err))
 	}
 	userService := service.NewUserService(userRepo, userCache)
-	userHandler := handler.NewUserHandler(userService, log)
+
+	auditClient := audit.NewClient(audit.Config{
+		Enabled: cfg.AuditLog.Enabled,
+		BaseURL: cfg.AuditLog.URL,
+		Timeout: cfg.AuditLog.Timeout,
+	}, log)
+
+	userHandler := handler.NewUserHandler(userService, auditClient, log)
 
 	authConfig := auth.Config{
 		Secret:   cfg.Auth.Secret,
@@ -85,7 +93,7 @@ func main() {
 		Audience: cfg.Auth.Audience,
 		TokenTTL: cfg.Auth.TokenTTL,
 	}
-	authHandler := handler.NewAuthHandler(log, authConfig, cfg.Auth.ClientID, cfg.Auth.ClientSecret, cfg.Auth.ClientRoles)
+	authHandler := handler.NewAuthHandler(log, auditClient, authConfig, cfg.Auth.ClientID, cfg.Auth.ClientSecret, cfg.Auth.ClientRoles)
 
 	// Initialize metrics
 	metricsCollector := metrics.NewMetrics("user_service")

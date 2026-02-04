@@ -73,7 +73,7 @@ func (r *Router) Setup() *gin.Engine {
 
 	auditLogs := protected.Group("/audit-logs")
 	{
-		auditLogs.POST("", middleware.RequireRoles("admin"), r.handler.CreateAuditLog)
+		auditLogs.POST("", middleware.RequireRoles("admin", "user", "service"), r.handler.CreateAuditLog)
 		auditLogs.GET("", middleware.RequireRoles("admin", "user"), r.handler.ListAuditLogs)
 		auditLogs.GET("/:id", middleware.RequireRoles("admin", "user"), r.handler.GetAuditLog)
 		auditLogs.PUT("/:id", middleware.RequireRoles("admin"), r.handler.UpdateAuditLog)
