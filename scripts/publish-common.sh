@@ -112,7 +112,6 @@ else
     print_success "Successfully fetched latest tags from remote."
 fi
 
-git fetch
 print_info "Checking for existing $MODULE tags..."
 
 # Get all module tags and find the latest
