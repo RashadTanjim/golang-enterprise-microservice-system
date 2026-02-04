@@ -737,6 +737,8 @@ make lint
 
 ### Go Dependencies
 - See `docs/GO_DEPENDENCIES.md` for a full explanation of every Go module in `go.mod`.
+### Database Schema
+- See `docs/DB_SCHEMA.md` for the shared PostgreSQL tables, fields, and status conventions.
 ### Git Commit Message Standards
 - See `docs/COMMIT_STANDARDS.md` for the commit format, change description, and impacted module guidance.
 ### Swagger
