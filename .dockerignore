@@ -1,0 +1,16 @@
+.git
+.gitignore
+.idea
+.env
+.env.example
+bin
+coverage.txt
+tmp
+**/node_modules
+frontend/dist
+frontend/.vite
+frontend/.cache
+docs
+monitoring
+k8s
+scripts
