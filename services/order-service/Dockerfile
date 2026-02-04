@@ -21,9 +21,6 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags="-w -s" \
     -o order-service ./services/order-service/cmd/main.go
 
-# Build the migrate binary
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags="-w -s" \
-    -o order-service-migrate ./services/order-service/cmd/migrate/main.go
 
 # Runtime stage
 FROM alpine:latest
@@ -36,7 +33,6 @@ WORKDIR /root/
 
 # Copy binary from builder
 COPY --from=builder /app/order-service .
-COPY --from=builder /app/order-service-migrate .
 
 # Copy .env.example if needed (optional)
 COPY --from=builder /app/.env.example .

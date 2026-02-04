@@ -102,11 +102,18 @@ enterprise-microservice-system/
 │   │   └── request_id.go          # Request ID tracking
 │   └── response/                   # Standard API responses
 ├── services/
+│   ├── migration-service/       # Database migrations runner
+│   │   ├── cmd/
+│   │   │   └── main.go          # Entry point
+│   │   ├── internal/
+│   │   │   └── config/          # Configuration
+│   │   ├── migrations/          # SQL migrations
+│   │   │   ├── user/            # User service migrations
+│   │   │   └── order/           # Order service migrations
+│   │   └── Dockerfile           # Container definition
 │   ├── user-service/              # User management service
 │   │   ├── cmd/
 │   │   │   ├── main.go           # Entry point
-│   │   │   └── migrate/          # Migration runner
-│   │   │       └── main.go
 │   │   ├── internal/
 │   │   │   ├── api/              # Route definitions
 │   │   │   ├── config/           # Configuration
@@ -114,7 +121,6 @@ enterprise-microservice-system/
 │   │   │   ├── model/            # Domain models
 │   │   │   ├── repository/       # Data access layer
 │   │   │   └── service/          # Business logic
-│   │   ├── migrations/           # SQL migrations
 │   │   ├── tests/                # Unit tests
 │   │   ├── Dockerfile            # Container definition
 │   │   ├── .air.toml             # Hot reload config
@@ -122,8 +128,6 @@ enterprise-microservice-system/
 │   └── order-service/            # Order management service
 │       ├── cmd/
 │       │   ├── main.go           # Entry point
-│       │   └── migrate/          # Migration runner
-│       │       └── main.go
 │       ├── internal/
 │       │   ├── api/              # Route definitions
 │       │   ├── client/           # Inter-service communication
@@ -132,7 +136,6 @@ enterprise-microservice-system/
 │       │   ├── model/            # Domain models
 │       │   ├── repository/       # Data access layer
 │       │   └── service/          # Business logic
-│       ├── migrations/           # SQL migrations
 │       ├── Dockerfile            # Container definition
 │       ├── .air.toml             # Hot reload config
 │       └── docs/                 # Swagger docs (generated)
@@ -227,7 +230,7 @@ go env -w GOPRIVATE=github.com/RashadTanjim/enterprise-microservice-system
 ### 2. Database Management
 - PostgreSQL with GORM ORM
 - Versioned migrations with golang-migrate
-- Embedded migration runner on service startup
+- Dedicated migration service for versioned SQL migrations
 - Connection pooling
 - Transaction support
 - Shared PostgreSQL database with service-owned tables
@@ -435,8 +438,10 @@ docker-compose up -d app-db
 
 4. Run migrations (optional if you prefer manual control):
 ```bash
-make migrate-user
-make migrate-order
+make migrate-all
+# or run individually:
+# make migrate-user
+# make migrate-order
 ```
 
 5. Run services locally:
@@ -768,7 +773,7 @@ make lint
 ### GitHub Actions CD
 - Builds and pushes Docker images to GHCR on pushes to `main` or `develop`.
 - Deploys to Kubernetes using manifests in `k8s/` and updates images to the commit SHA.
-- Runs migration jobs for user and order services after deployment.
+- Runs migration jobs via the migration service after deployment.
 
 ### Postman Collection
 - Import `docs/collections/enterprise-microservice-system.postman_collection.json` and `docs/collections/enterprise-microservice-system.postman_environment.json`.
@@ -801,6 +806,7 @@ make run-order        # Run order service
 make run-audit-log    # Run audit log service
 make migrate-user     # Run user database migrations
 make migrate-order    # Run order database migrations
+make migrate-all      # Run all database migrations
 make test             # Run all tests
 make test-user        # Run user service tests
 make test-order       # Run order service tests
@@ -890,7 +896,7 @@ Full guide:
    - Enable automatic backups
    - Configure read replicas for scaling
    - Implement connection pooling
-   - Run migrations as part of deploy or startup
+   - Run migrations as part of deploy or via the migration service
 
 3. **Monitoring**
    - Deploy Prometheus and Grafana

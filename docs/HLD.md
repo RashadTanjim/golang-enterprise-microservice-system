@@ -91,9 +91,10 @@ Services isolate data by table and access patterns within a shared database.
 
 ## 7) Migrations
 - **golang-migrate** used with embedded SQL migrations.
-- Migrations run on service startup and can be triggered manually with:
+- Migrations are run by the migration service and can be triggered manually with:
   - `make migrate-user`
   - `make migrate-order`
+  - `make migrate-all`
 - Audit Log Service uses GORM auto-migrations on startup.
 
 ## 8) Observability

@@ -1,4 +1,4 @@
-.PHONY: help build run test lint link-check swagger frontend-install frontend-test frontend-build docker-up docker-down clean migrate-user migrate-order run-user run-order run-audit-log test-user test-order test-audit-log
+.PHONY: help build run test lint link-check swagger frontend-install frontend-test frontend-build docker-up docker-down clean migrate-user migrate-order migrate-all run-user run-order run-audit-log test-user test-order test-audit-log
 
 help: ## Display this help screen
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -10,6 +10,8 @@ build: ## Build all services
 	@cd services/order-service && go build -o ../../bin/order-service ./cmd/main.go
 	@echo "Building audit-log-service..."
 	@cd services/audit-log-service && go build -o ../../bin/audit-log-service ./cmd/main.go
+	@echo "Building migration-service..."
+	@cd services/migration-service && go build -o ../../bin/migration-service ./cmd/main.go
 	@echo "Build complete!"
 
 run-user: ## Run user service
@@ -99,12 +101,16 @@ deps: ## Download dependencies
 	@echo "Dependencies updated!"
 
 migrate-user: ## Run user database migrations
-	@echo "Running user service migrations..."
-	@cd services/user-service && go run ./cmd/migrate/main.go
+	@echo "Running user database migrations..."
+	@go run ./services/migration-service/cmd/main.go --target user
 
 migrate-order: ## Run order database migrations
-	@echo "Running order service migrations..."
-	@cd services/order-service && go run ./cmd/migrate/main.go
+	@echo "Running order database migrations..."
+	@go run ./services/migration-service/cmd/main.go --target order
+
+migrate-all: ## Run user + order database migrations
+	@echo "Running all database migrations..."
+	@go run ./services/migration-service/cmd/main.go --target all
 
 install-tools: ## Install development tools
 	@echo "Installing development tools..."

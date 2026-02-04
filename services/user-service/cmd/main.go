@@ -13,7 +13,6 @@ import (
 	"enterprise-microservice-system/services/user-service/internal/handler"
 	"enterprise-microservice-system/services/user-service/internal/repository"
 	"enterprise-microservice-system/services/user-service/internal/service"
-	"enterprise-microservice-system/services/user-service/migrations"
 	"fmt"
 	"net/http"
 	"os"
@@ -52,17 +51,6 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to connect to database", zap.Error(err))
 	}
-
-	// Run database migrations
-	sqlDB, err := db.DB()
-	if err != nil {
-		log.Fatal("Failed to access database connection", zap.Error(err))
-	}
-
-	if err := migrations.Run(sqlDB); err != nil {
-		log.Fatal("Failed to run database migrations", zap.Error(err))
-	}
-	log.Info("Database migrations completed")
 
 	// Initialize dependencies
 	userRepo := repository.NewUserRepository(db)

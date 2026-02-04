@@ -9,17 +9,29 @@ import (
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 )
 
-//go:embed *.sql
-var migrationsFS embed.FS
+//go:embed user/*.sql
+var userMigrationsFS embed.FS
 
-// Run applies all up migrations for the user service.
-func Run(db *sql.DB) error {
+//go:embed order/*.sql
+var orderMigrationsFS embed.FS
+
+// RunUser applies all up migrations for the user service.
+func RunUser(db *sql.DB) error {
+	return run(db, userMigrationsFS, "user")
+}
+
+// RunOrder applies all up migrations for the order service.
+func RunOrder(db *sql.DB) error {
+	return run(db, orderMigrationsFS, "order")
+}
+
+func run(db *sql.DB, migrationsFS embed.FS, dir string) error {
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
 		return err
 	}
 
-	source, err := iofs.New(migrationsFS, ".")
+	source, err := iofs.New(migrationsFS, dir)
 	if err != nil {
 		return err
 	}

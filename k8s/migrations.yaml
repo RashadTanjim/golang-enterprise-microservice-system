@@ -12,8 +12,8 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: migrate-user
-          image: ghcr.io/your-org/enterprise-microservice-system/user-service:latest
-          command: ["./user-service-migrate"]
+          image: ghcr.io/your-org/enterprise-microservice-system/migration-service:latest
+          command: ["./migration-service", "--target", "user"]
           envFrom:
             - configMapRef:
                 name: app-config
@@ -50,8 +50,8 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: migrate-order
-          image: ghcr.io/your-org/enterprise-microservice-system/order-service:latest
-          command: ["./order-service-migrate"]
+          image: ghcr.io/your-org/enterprise-microservice-system/migration-service:latest
+          command: ["./migration-service", "--target", "order"]
           envFrom:
             - configMapRef:
                 name: app-config
