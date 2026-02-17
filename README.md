@@ -848,6 +848,51 @@ make vet              # Run go vet
 
 ## Deployment
 
+### Netlify (Frontend SPA)
+
+The repository includes a Netlify configuration at `netlify.toml` for the Vue 3 portal.
+
+1. Create a new Netlify site from this repo.
+2. Confirm the build settings (already defined in `netlify.toml`):
+   - Base directory: `frontend`
+   - Build command: `npm run build`
+   - Publish directory: `dist`
+3. Configure environment variables in Netlify:
+   - `VITE_API_BASE` (example: `https://api.example.com/api/v1`)
+   - `VITE_HEALTH_BASE` (example: `https://api.example.com/health`)
+4. Deploy. The SPA redirect is configured to serve `index.html` for all routes.
+
+### Backend with Docker Compose (Production)
+
+Use `docker-compose.prod.yml` with `.env.production` to run all backend services and the API gateway on one host.
+
+1. Create and configure production secrets in `.env.production`:
+   ```bash
+   cp .env.production.example .env.production
+   ```
+2. Start the backend stack (one command):
+   ```bash
+   make docker-prod-up
+   ```
+   Equivalent raw command:
+   ```bash
+   docker compose --env-file .env.production -f docker-compose.prod.yml up -d
+   ```
+3. Verify health endpoints through the gateway:
+   ```bash
+   curl http://<server-host>:8080/health/user
+   curl http://<server-host>:8080/health/order
+   curl http://<server-host>:8080/health/audit-log
+   ```
+4. Set Netlify frontend variables to this backend host:
+   - `VITE_API_BASE=https://<api-domain>/api/v1`
+   - `VITE_HEALTH_BASE=https://<api-domain>/health`
+
+Notes:
+- `docker-compose.prod.yml` uses prebuilt images from GHCR by default.
+- Change `IMAGE_REPOSITORY` and `IMAGE_TAG` in `.env.production` if needed.
+- `.env.production` is gitignored to keep secrets out of version control.
+
 ### Building Production Images
 
 ```bash

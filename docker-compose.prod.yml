@@ -1,0 +1,223 @@
+services:
+  app-db:
+    image: postgres:16-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-enterprise-ms}-app-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${APP_DB_USER}
+      POSTGRES_PASSWORD: ${APP_DB_PASSWORD}
+      POSTGRES_DB: ${APP_DB_NAME}
+    volumes:
+      - app_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${APP_DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - microservices
+
+  redis:
+    image: redis:7-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-enterprise-ms}-redis
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    command:
+      - sh
+      - -c
+      - |
+        if [ -n "$$REDIS_PASSWORD" ]; then
+          exec redis-server --appendonly yes --requirepass "$$REDIS_PASSWORD";
+        else
+          exec redis-server --appendonly yes;
+        fi
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - microservices
+
+  migration-service:
+    image: ${IMAGE_REGISTRY}/${IMAGE_REPOSITORY}/migration-service:${IMAGE_TAG}
+    container_name: ${COMPOSE_PROJECT_NAME:-enterprise-ms}-migration-service
+    restart: "no"
+    command: ["./migration-service", "--target", "all"]
+    environment:
+      MIGRATION_SERVICE_LOG_LEVEL: ${MIGRATION_SERVICE_LOG_LEVEL}
+      USER_SERVICE_DB_HOST: app-db
+      USER_SERVICE_DB_PORT: 5432
+      USER_SERVICE_DB_USER: ${APP_DB_USER}
+      USER_SERVICE_DB_PASSWORD: ${APP_DB_PASSWORD}
+      USER_SERVICE_DB_NAME: ${APP_DB_NAME}
+      ORDER_SERVICE_DB_HOST: app-db
+      ORDER_SERVICE_DB_PORT: 5432
+      ORDER_SERVICE_DB_USER: ${APP_DB_USER}
+      ORDER_SERVICE_DB_PASSWORD: ${APP_DB_PASSWORD}
+      ORDER_SERVICE_DB_NAME: ${APP_DB_NAME}
+    depends_on:
+      app-db:
+        condition: service_healthy
+    networks:
+      - microservices
+
+  audit-log-service:
+    image: ${IMAGE_REGISTRY}/${IMAGE_REPOSITORY}/audit-log-service:${IMAGE_TAG}
+    container_name: ${COMPOSE_PROJECT_NAME:-enterprise-ms}-audit-log-service
+    restart: unless-stopped
+    environment:
+      AUDIT_LOG_SERVICE_PORT: 8083
+      AUDIT_LOG_SERVICE_DB_HOST: app-db
+      AUDIT_LOG_SERVICE_DB_PORT: 5432
+      AUDIT_LOG_SERVICE_DB_USER: ${APP_DB_USER}
+      AUDIT_LOG_SERVICE_DB_PASSWORD: ${APP_DB_PASSWORD}
+      AUDIT_LOG_SERVICE_DB_NAME: ${APP_DB_NAME}
+      AUDIT_LOG_SERVICE_LOG_LEVEL: ${AUDIT_LOG_SERVICE_LOG_LEVEL}
+      AUDIT_LOG_SERVICE_RATE_LIMIT: ${AUDIT_LOG_SERVICE_RATE_LIMIT}
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET}
+      AUTH_JWT_ISSUER: ${AUTH_JWT_ISSUER}
+      AUTH_JWT_AUDIENCE: ${AUTH_JWT_AUDIENCE}
+      AUTH_TOKEN_TTL_MINUTES: ${AUTH_TOKEN_TTL_MINUTES}
+      REDIS_ENABLED: ${REDIS_ENABLED}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_DB: ${REDIS_DB}
+      REDIS_TTL_SECONDS: ${REDIS_TTL_SECONDS}
+    depends_on:
+      app-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8083/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - microservices
+
+  user-service:
+    image: ${IMAGE_REGISTRY}/${IMAGE_REPOSITORY}/user-service:${IMAGE_TAG}
+    container_name: ${COMPOSE_PROJECT_NAME:-enterprise-ms}-user-service
+    restart: unless-stopped
+    environment:
+      USER_SERVICE_PORT: 8081
+      USER_SERVICE_DB_HOST: app-db
+      USER_SERVICE_DB_PORT: 5432
+      USER_SERVICE_DB_USER: ${APP_DB_USER}
+      USER_SERVICE_DB_PASSWORD: ${APP_DB_PASSWORD}
+      USER_SERVICE_DB_NAME: ${APP_DB_NAME}
+      USER_SERVICE_LOG_LEVEL: ${USER_SERVICE_LOG_LEVEL}
+      USER_SERVICE_RATE_LIMIT: ${USER_SERVICE_RATE_LIMIT}
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET}
+      AUTH_JWT_ISSUER: ${AUTH_JWT_ISSUER}
+      AUTH_JWT_AUDIENCE: ${AUTH_JWT_AUDIENCE}
+      AUTH_TOKEN_TTL_MINUTES: ${AUTH_TOKEN_TTL_MINUTES}
+      AUTH_CLIENT_ID: ${AUTH_CLIENT_ID}
+      AUTH_CLIENT_SECRET: ${AUTH_CLIENT_SECRET}
+      AUTH_CLIENT_ROLES: ${AUTH_CLIENT_ROLES}
+      REDIS_ENABLED: ${REDIS_ENABLED}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_DB: ${REDIS_DB}
+      REDIS_TTL_SECONDS: ${REDIS_TTL_SECONDS}
+      AUDIT_LOG_SERVICE_ENABLED: ${AUDIT_LOG_SERVICE_ENABLED}
+      AUDIT_LOG_SERVICE_URL: http://audit-log-service:8083
+      AUDIT_LOG_SERVICE_TIMEOUT_SECONDS: ${AUDIT_LOG_SERVICE_TIMEOUT_SECONDS}
+    depends_on:
+      app-db:
+        condition: service_healthy
+      migration-service:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      audit-log-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - microservices
+
+  order-service:
+    image: ${IMAGE_REGISTRY}/${IMAGE_REPOSITORY}/order-service:${IMAGE_TAG}
+    container_name: ${COMPOSE_PROJECT_NAME:-enterprise-ms}-order-service
+    restart: unless-stopped
+    environment:
+      ORDER_SERVICE_PORT: 8082
+      ORDER_SERVICE_DB_HOST: app-db
+      ORDER_SERVICE_DB_PORT: 5432
+      ORDER_SERVICE_DB_USER: ${APP_DB_USER}
+      ORDER_SERVICE_DB_PASSWORD: ${APP_DB_PASSWORD}
+      ORDER_SERVICE_DB_NAME: ${APP_DB_NAME}
+      ORDER_SERVICE_LOG_LEVEL: ${ORDER_SERVICE_LOG_LEVEL}
+      ORDER_SERVICE_RATE_LIMIT: ${ORDER_SERVICE_RATE_LIMIT}
+      ORDER_SERVICE_USER_SERVICE_URL: http://user-service:8081
+      CIRCUIT_BREAKER_MAX_REQUESTS: ${CIRCUIT_BREAKER_MAX_REQUESTS}
+      CIRCUIT_BREAKER_INTERVAL: ${CIRCUIT_BREAKER_INTERVAL}
+      CIRCUIT_BREAKER_TIMEOUT: ${CIRCUIT_BREAKER_TIMEOUT}
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET}
+      AUTH_JWT_ISSUER: ${AUTH_JWT_ISSUER}
+      AUTH_JWT_AUDIENCE: ${AUTH_JWT_AUDIENCE}
+      AUTH_TOKEN_TTL_MINUTES: ${AUTH_TOKEN_TTL_MINUTES}
+      AUTH_SERVICE_SUBJECT: ${AUTH_SERVICE_SUBJECT}
+      AUTH_SERVICE_ROLES: ${AUTH_SERVICE_ROLES}
+      REDIS_ENABLED: ${REDIS_ENABLED}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_DB: ${REDIS_DB}
+      REDIS_TTL_SECONDS: ${REDIS_TTL_SECONDS}
+      AUDIT_LOG_SERVICE_ENABLED: ${AUDIT_LOG_SERVICE_ENABLED}
+      AUDIT_LOG_SERVICE_URL: http://audit-log-service:8083
+      AUDIT_LOG_SERVICE_TIMEOUT_SECONDS: ${AUDIT_LOG_SERVICE_TIMEOUT_SECONDS}
+    depends_on:
+      app-db:
+        condition: service_healthy
+      migration-service:
+        condition: service_completed_successfully
+      user-service:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      audit-log-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8082/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - microservices
+
+  web-portal:
+    image: ${IMAGE_REGISTRY}/${IMAGE_REPOSITORY}/web-portal:${IMAGE_TAG}
+    container_name: ${COMPOSE_PROJECT_NAME:-enterprise-ms}-web-portal
+    restart: unless-stopped
+    ports:
+      - "${PUBLIC_API_PORT}:80"
+    depends_on:
+      user-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+      audit-log-service:
+        condition: service_healthy
+    networks:
+      - microservices
+
+volumes:
+  app_db_data:
+  redis_data:
+
+networks:
+  microservices:
+    driver: bridge

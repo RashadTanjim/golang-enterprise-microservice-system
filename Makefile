@@ -1,4 +1,4 @@
-.PHONY: help build run test lint link-check swagger frontend-install frontend-test frontend-build docker-up docker-down clean migrate-user migrate-order migrate-all run-user run-order run-audit-log test-user test-order test-audit-log
+.PHONY: help build run test lint link-check swagger frontend-install frontend-test frontend-build docker-up docker-down docker-prod-up docker-prod-down clean migrate-user migrate-order migrate-all run-user run-order run-audit-log test-user test-order test-audit-log
 
 help: ## Display this help screen
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -81,6 +81,17 @@ docker-down: ## Stop all docker containers
 	@echo "Stopping Docker containers..."
 	@docker-compose down
 	@echo "Containers stopped!"
+
+docker-prod-up: ## Start production backend stack using docker-compose.prod.yml
+	@echo "Starting production backend stack..."
+	@cp -n .env.production.example .env.production 2>/dev/null || true
+	@docker compose --env-file .env.production -f docker-compose.prod.yml up -d
+	@echo "Production backend stack started!"
+
+docker-prod-down: ## Stop production backend stack
+	@echo "Stopping production backend stack..."
+	@docker compose --env-file .env.production -f docker-compose.prod.yml down
+	@echo "Production backend stack stopped!"
 
 docker-clean: ## Remove all containers, volumes, and images
 	@echo "Cleaning up Docker resources..."
