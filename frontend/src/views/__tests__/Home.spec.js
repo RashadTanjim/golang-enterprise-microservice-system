@@ -12,7 +12,7 @@ describe('Home view', () => {
     setActivePinia(createPinia());
   });
 
-  it('renders headline and status cards', () => {
+  it('renders landing message and purpose sections', () => {
     const wrapper = mount(Home, {
       global: {
         stubs: {
@@ -22,9 +22,9 @@ describe('Home view', () => {
       }
     });
 
-    expect(wrapper.text()).toContain('Enterprise Microservice Portal');
-    expect(wrapper.text()).toContain('User Service');
-    expect(wrapper.text()).toContain('Order Service');
-    expect(wrapper.text()).toContain('Audit Log Service');
+    expect(wrapper.text()).toContain('enterprise-ready foundation');
+    expect(wrapper.text()).toContain('Project Purpose');
+    expect(wrapper.text()).toContain('Unified visibility');
+    expect(wrapper.text()).toContain('Backend in one command');
   });
 });
