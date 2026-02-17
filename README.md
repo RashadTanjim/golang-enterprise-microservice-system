@@ -861,6 +861,7 @@ The repository includes a Netlify configuration at `netlify.toml` for the Vue 3 
    - `VITE_API_BASE` (example: `https://api.example.com/api/v1`)
    - `VITE_HEALTH_BASE` (example: `https://api.example.com/health`)
 4. Deploy. The SPA redirect is configured to serve `index.html` for all routes.
+5. Live frontend URL: `https://enterprise-microservice-system-go.netlify.app/`
 
 ### Backend with Docker Compose (Production)
 
